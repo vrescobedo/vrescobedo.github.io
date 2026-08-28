@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1f5c3f" />
+<meta name="description" content="Record your tennis matches, opponents and practice sessions, and track your stats." />
+<title>MyTennisApp</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" href="icon-192.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="MyTennisApp" />
+<style>
+  :root{
+    --green:#1f5c3f; --green-dark:#103227; --lime:#c9e86b; --lime-dark:#9fce3a;
+    --bg:#f4f6f4; --card:#ffffff; --ink:#1b2420; --muted:#6b7a72; --line:#e2e8e3;
+    --win:#1f8a52; --loss:#c0453b; --shadow:0 2px 10px rgba(16,50,39,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);padding-bottom:76px;line-height:1.45}
+  header{background:linear-gradient(135deg,var(--green),var(--green-dark));color:#fff;
+    padding:16px 16px calc(14px + env(safe-area-inset-top)) 16px;padding-top:calc(16px + env(safe-area-inset-top));
+    position:sticky;top:0;z-index:20;box-shadow:var(--shadow)}
+  header .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  header h1{font-size:19px;margin:0;display:flex;align-items:center;gap:9px;font-weight:700}
+  .ball{width:22px;height:22px;border-radius:50%;background:var(--lime);position:relative;flex:0 0 auto}
+  .ball::before,.ball::after{content:"";position:absolute;inset:0;border:2px solid var(--green-dark);
+    border-radius:50%;clip-path:inset(0 50% 0 0)}
+  .ball::after{clip-path:inset(0 0 0 50%)}
+  .hbtns{display:flex;gap:8px}
+  .hbtn{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:9px;padding:7px 10px;
+    font-size:12.5px;font-weight:600;cursor:pointer}
+  .hbtn:active{background:rgba(255,255,255,.28)}
+  main{max-width:760px;margin:0 auto;padding:14px}
+  .view{display:none}.view.active{display:block}
+  h2.sec{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 2px 10px}
+  /* dashboard */
+  .dfilter{display:flex;gap:5px;background:var(--card);padding:5px;border-radius:12px;box-shadow:var(--shadow);margin-bottom:14px}
+  .dfilter button{flex:1;border:0;background:none;padding:10px 6px;border-radius:9px;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .dfilter button.on{background:var(--green);color:#fff}
+  .drange{display:flex;align-items:flex-end;gap:8px;margin-bottom:14px}
+  .drange label{flex:1;margin:0;font-size:11.5px;color:var(--muted);font-weight:600}
+  .drange input{margin-top:3px;padding:9px}
+  .drange .clr{flex:0 0 auto;width:auto;border:0;background:#eef2ee;color:var(--ink);font-weight:700;
+    padding:10px 13px;border-radius:9px;cursor:pointer;font-size:13px}
+  .dpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .dpresets button{flex:1;min-width:calc(50% - 3px);border:1px solid var(--line);background:#fbfdfb;
+    color:var(--muted);font-weight:700;font-size:12.5px;padding:9px 6px;border-radius:9px;cursor:pointer}
+  .dpresets button.on{background:var(--green);color:#fff;border-color:transparent}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:16px}
+  .stat{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+  .stat .n{font-size:26px;font-weight:800;color:var(--green)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .stat.win .n{color:var(--win)}
+  .bar-wrap{background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:16px}
+  .bar-wrap h3{margin:0 0 12px;font-size:13.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .bar-row .lbl{width:92px;flex:0 0 auto;color:var(--ink)}
+  .bar-track{flex:1;background:#eef2ee;border-radius:6px;height:16px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--lime-dark),var(--green));border-radius:6px}
+  .bar-row .val{width:52px;text-align:right;color:var(--muted);flex:0 0 auto}
+  /* cards / lists */
+  .item{background:var(--card);border-radius:13px;padding:13px 14px;box-shadow:var(--shadow);margin-bottom:10px;
+    display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+  .item:active{transform:scale(.995)}
+  .item .main{flex:1;min-width:0}
+  .item .t{font-weight:700;font-size:15px}
+  .item .s{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .pill.win{background:#e3f4ea;color:var(--win)}
+  .pill.loss{background:#fbe6e4;color:var(--loss)}
+  .pill.neutral{background:#eef2ee;color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px}
+  .empty .big{font-size:40px;margin-bottom:8px}
+  /* fab */
+  .fab{position:fixed;right:18px;bottom:88px;width:56px;height:56px;border-radius:50%;
+    background:var(--green);color:#fff;border:0;font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(16,50,39,.35);
+    cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center}
+  .fab:active{background:var(--green-dark)}
+  /* bottom nav */
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
+    display:flex;z-index:25;padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs button{flex:1;background:none;border:0;padding:9px 4px 7px;color:var(--muted);font-size:11px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-weight:600}
+  nav.tabs button .ic{font-size:20px}
+  nav.tabs button.on{color:var(--green)}
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(16,50,39,.45);display:none;z-index:40;align-items:flex-end;justify-content:center}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;
+    padding:18px 16px calc(24px + env(safe-area-inset-bottom))}
+  @media(min-width:600px){.modal-bg{align-items:center}.modal{border-radius:18px;max-height:88vh}}
+  .modal h3{margin:2px 0 14px;font-size:18px}
+  label{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:11px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;
+    font-size:15px;font-family:inherit;background:#fbfdfb;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--lime-dark);border-color:transparent}
+  textarea{min-height:64px;resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
+  .seg input{display:none}
+  .seg label{flex:1;margin:0;text-align:center;padding:11px;font-size:14.5px;color:var(--muted);
+    font-weight:700;cursor:pointer;background:#fbfdfb}
+  .seg input:checked + label{background:var(--green);color:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .chips input{display:none}
+  .chips label{margin:0;padding:9px 14px;border:1px solid var(--line);border-radius:999px;
+    font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;background:#fbfdfb}
+  .chips input:checked + label{background:var(--green);color:#fff;border-color:transparent}
+  .modal-actions{display:flex;gap:10px;margin-top:18px}
+  .btn{flex:1;padding:13px;border-radius:11px;border:0;font-size:15px;font-weight:700;cursor:pointer}
+  .btn.primary{background:var(--green);color:#fff}
+  .btn.primary:active{background:var(--green-dark)}
+  .btn.ghost{background:#eef2ee;color:var(--ink)}
+  .btn.danger{background:#fbe6e4;color:var(--loss);flex:0 0 auto;padding:13px 16px}
+  .menu-sheet button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);
+    padding:14px 6px;font-size:15px;cursor:pointer;color:var(--ink)}
+  .menu-sheet button:last-child{border-bottom:0}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:5px}
+  .fileimport{display:none}
+  /* ---------------- intro / splash ---------------- */
+  #splash{position:fixed;inset:0;z-index:9999;
+    background:linear-gradient(160deg,#2a6a49 0%,var(--green) 30%,var(--green-dark) 72%,#0b241b 100%);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    padding:calc(22px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+    opacity:1;transition:opacity .5s ease}
+  #splash.hide{opacity:0;pointer-events:none}
+  .sp-inner{width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .sp-brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:.02em;
+    color:#eafbef;opacity:.95;margin-bottom:16px}
+  .sp-ball{width:20px;height:20px;border-radius:50%;background:var(--lime);position:relative;flex:0 0 auto}
+  .sp-ball::before,.sp-ball::after{content:"";position:absolute;inset:0;border:2px solid var(--green-dark);
+    border-radius:50%;clip-path:inset(0 50% 0 0)}
+  .sp-ball::after{clip-path:inset(0 0 0 50%)}
+  .sp-photos{position:relative;width:100%;aspect-ratio:3/2;border-radius:18px;overflow:hidden;
+    background:#0b241b;box-shadow:0 14px 40px rgba(0,0,0,.45);border:2px solid rgba(201,232,107,.35)}
+  .sp-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .9s ease}
+  .sp-photo.on{opacity:1}
+  .sp-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;gap:7px;justify-content:center;z-index:2}
+  .sp-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);transition:all .3s}
+  .sp-dot.on{background:var(--lime);width:20px;border-radius:4px}
+  .sp-tagline{margin-top:18px;font-size:12px;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--lime);font-weight:700}
+  .sp-name{font-size:26px;font-weight:800;margin-top:5px;line-height:1.15}
+  .sp-sub{font-size:13.5px;color:#cfe6d7;margin-top:6px}
+  .sp-contact{margin-top:18px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+    border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+  .sp-row{display:flex;align-items:center;justify-content:center;gap:10px;font-size:16px;font-weight:700;
+    color:#fff;text-decoration:none}
+  .sp-row .sp-ic{font-size:17px}
+  .sp-row.tel{color:var(--lime)}
+  .sp-skip{margin-top:20px;background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:24px;
+    padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer}
+  .sp-skip:active{background:rgba(255,255,255,.26)}
+  .sp-progress{margin-top:16px;width:120px;height:4px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+  .sp-progbar{height:100%;width:0;background:var(--lime);border-radius:3px}
+  .sp-progbar.run{width:100%;transition:width 10s linear}
+  body.splash-lock{overflow:hidden}
+  @media (max-height:640px){
+    .sp-name{font-size:22px}.sp-brand{margin-bottom:10px}.sp-tagline{margin-top:12px}
+    .sp-contact{margin-top:12px}.sp-skip{margin-top:12px}
+  }
+</style>
+</head>
+<body>
+<!-- ===================== INTRO / SPLASH (shows for 10s on launch) ===================== -->
+<div id="splash" role="dialog" aria-label="MyTennisApp intro">
+  <div class="sp-inner">
+    <div class="sp-brand"><span class="sp-ball"></span> MyTennisApp</div>
+    <div class="sp-photos">
+      <img class="sp-photo on" src="bolsa-1.jpg" alt="Ricardo Escobedo recibiendo un premio" />
+      <img class="sp-photo" src="bolsa-2.jpg" alt="Ricardo Escobedo en la cancha de tenis" />
+      <img class="sp-photo" src="bolsa-3.jpg" alt="Ricardo Escobedo con una medalla de oro" />
+      <img class="sp-photo" src="bolsa-4.jpg" alt="Ricardo Escobedo homenajeado en el escenario" />
+      <div class="sp-dots" id="spDots"></div>
+    </div>
+    <div class="sp-tagline">Encordado de raquetas por</div>
+    <div class="sp-name">Ricardo &ldquo;Bolsa&rdquo; Escobedo</div>
+    <div class="sp-sub">Encordado y reencordado profesional de raquetas</div>
+    <div class="sp-contact">
+      <a class="sp-row tel" href="https://wa.me/51999715301?text=Hola%20Richi%2C%20quisiera%20encordar%20mi%20raqueta" target="_blank" rel="noopener"><span class="sp-ic">💬</span><span>+51&nbsp;999&nbsp;715&nbsp;301</span></a>
+      <div class="sp-row"><span class="sp-ic">📍</span><span>Magdalena del Mar, Lima</span></div>
+    </div>
+    <button class="sp-skip" id="spSkip" type="button">Entrar a la app ›</button>
+    <div class="sp-progress"><div class="sp-progbar" id="spProg"></div></div>
+  </div>
+</div>
+
+<header>
+  <div class="row">
+    <h1><span class="ball"></span> MyTennisApp</h1>
+    <div class="hbtns">
+      <button class="hbtn" onclick="openMenu()">Data ▾</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="v-dash" class="view active">
+    <div class="dfilter" id="dashFilter">
+      <button data-f="all" class="on" onclick="setDashFilter('all')">All</button>
+      <button data-f="Singles" onclick="setDashFilter('Singles')">Singles</button>
+      <button data-f="Doubles" onclick="setDashFilter('Doubles')">Doubles</button>
+    </div>
+    <div class="dpresets" id="dashPresets">
+      <button data-p="30" onclick="applyPreset('30')">Last 30 days</button>
+      <button data-p="60" onclick="applyPreset('60')">Last 60 days</button>
+      <button data-p="90" onclick="applyPreset('90')">Last 90 days</button>
+      <button data-p="year" onclick="applyPreset('year')">This Year</button>
+    </div>
+    <div class="drange">
+      <label>From<input type="date" id="dashFrom" onchange="setDashRange()"></label>
+      <label>To<input type="date" id="dashTo" onchange="setDashRange()"></label>
+      <button class="clr" onclick="clearDashRange()">Clear</button>
+    </div>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="bar-wrap"><h3>Results by surface</h3><div id="surfaceBars"></div></div>
+    <div class="bar-wrap"><h3>Top opponents (head-to-head)</h3><div id="oppBars"></div></div>
+    <div class="bar-wrap"><h3>Practice focus (% of time)</h3><div id="focusBars"></div></div>
+  </section>
+
+  <!-- MATCHES -->
+  <section id="v-matches" class="view">
+    <h2 class="sec">Matches</h2>
+    <div id="matchList"></div>
+  </section>
+
+  <!-- OPPONENTS -->
+  <section id="v-opponents" class="view">
+    <h2 class="sec">Opponents</h2>
+    <div id="oppList"></div>
+  </section>
+
+  <!-- PRACTICES -->
+  <section id="v-practices" class="view">
+    <h2 class="sec">Practices</h2>
+    <div id="pracList"></div>
+  </section>
+</main>
+
+<button class="fab" id="fab" onclick="addCurrent()">+</button>
+
+<nav class="tabs">
+  <button data-v="dash" class="on" onclick="show('dash')"><span class="ic">📊</span>Dashboard</button>
+  <button data-v="matches" onclick="show('matches')"><span class="ic">🎾</span>Matches</button>
+  <button data-v="opponents" onclick="show('opponents')"><span class="ic">👤</span>Opponents</button>
+  <button data-v="practices" onclick="show('practices')"><span class="ic">🏋️</span>Practices</button>
+  <button onclick="openAbout()"><span class="ic">ℹ️</span>About</button>
+</nav>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<input type="file" id="fileImport" class="fileimport" accept="application/json" onchange="doImport(event)" />
+
+<script>
+/* ---------------- storage ---------------- */
+const K = {m:'tennis_matches', o:'tennis_opponents', p:'tennis_practices'};
+const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e){ return []; } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+let matches = load(K.m), opponents = load(K.o), practices = load(K.p);
+
+/* seed example data on very first run */
+if(!localStorage.getItem('tennis_seeded')){
+  opponents = [{id:uid(),name:'Rajiv Sharma',club:'DLTA',hand:'Right',level:'Intermediate',city:'New Delhi',contact:'',notes:'Strong forehand, slower to the net'}];
+  matches = [{id:uid(),date:'2026-08-08',opponent:'Rajiv Sharma',type:'Competitive',surface:'Hard',location:'DLTA, New Delhi',score:'6-4 3-6 6-2',result:'Win',setsW:2,setsL:1,duration:95,notes:'Served well; backhand under pressure needs work'}];
+  practices = [{id:uid(),date:'2026-08-07',focus:'Serve + Forehand',duration:75,with:'Coach Anil',location:'DLTA, New Delhi',intensity:4,notes:'200 serves; worked on toss consistency'}];
+  save(K.m,matches);save(K.o,opponents);save(K.p,practices);
+  localStorage.setItem('tennis_seeded','1');
+}
+
+/* ---------------- view switching ---------------- */
+let current = 'dash';
+let dashFilter = 'all';   // 'all' | 'Singles' | 'Doubles' — dashboard stats filter
+let dashFrom = '';        // dashboard date-range start (YYYY-MM-DD); '' = open
+let dashTo   = '';        // dashboard date-range end   (YYYY-MM-DD); '' = open
+let dashPreset = '';      // '' | '30' | '60' | '90' | 'year' — active quick preset
+function setDashFilter(f){
+  dashFilter = f;
+  document.querySelectorAll('#dashFilter button').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
+  renderDash();
+}
+function isoDay(dt){ const z=new Date(dt.getTime()-dt.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function presetRange(preset){
+  const today=new Date(), to=isoDay(today);
+  let from;
+  if(preset==='year'){ from=isoDay(new Date(today.getFullYear(),0,1)); }
+  else { const d=new Date(today); d.setDate(d.getDate()-(+preset-1)); from=isoDay(d); }
+  return {from,to};
+}
+function markActivePreset(){
+  document.querySelectorAll('#dashPresets button').forEach(b=>b.classList.toggle('on', b.dataset.p===dashPreset));
+}
+function saveDashRange(){ save('tennis_dashrange', {preset:dashPreset, from:dashFrom, to:dashTo}); }
+function reflectRangeInputs(){
+  document.getElementById('dashFrom').value = dashFrom;
+  document.getElementById('dashTo').value   = dashTo;
+  markActivePreset();
+}
+function applyPreset(preset, doRender=true){
+  dashPreset = preset;
+  const r = presetRange(preset);
+  dashFrom = r.from; dashTo = r.to;
+  reflectRangeInputs();
+  saveDashRange();
+  if(doRender) renderDash();
+}
+function setDashRange(){
+  dashFrom = document.getElementById('dashFrom').value;
+  dashTo   = document.getElementById('dashTo').value;
+  dashPreset = '';
+  markActivePreset();
+  saveDashRange();
+  renderDash();
+}
+function clearDashRange(){
+  dashFrom=''; dashTo=''; dashPreset='';
+  reflectRangeInputs();
+  saveDashRange();
+  renderDash();
+}
+function restoreDashRange(){
+  let r=null; try{ r=JSON.parse(localStorage.getItem('tennis_dashrange')); }catch(e){}
+  if(!r) return;
+  if(r.preset){ applyPreset(r.preset, false); }
+  else { dashFrom=r.from||''; dashTo=r.to||''; reflectRangeInputs(); }
+}
+function inDashRange(d){
+  if(dashFrom && (!d || d<dashFrom)) return false;
+  if(dashTo   && (!d || d>dashTo))   return false;
+  return true;
+}
+function show(v){
+  current = v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  document.getElementById('fab').style.display = (v==='dash') ? 'none' : 'flex';
+  render();
+  window.scrollTo(0,0);
+}
+function addCurrent(){
+  if(current==='matches') editMatch();
+  else if(current==='opponents') editOpponent();
+  else if(current==='practices') editPractice();
+}
+
+/* ---------------- helpers ---------------- */
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const byDateDesc = (a,b)=> ((b.date||'')+'T'+(b.time||'')).localeCompare((a.date||'')+'T'+(a.time||''));
+function fmtDate(d){ if(!d) return ''; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?d:dt.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}); }
+/* parse a score string like "6-4 3-6 7-6(5)" -> sets & games won/lost (your games first) */
+function parseScore(score){
+  if(!score) return null;
+  let sW=0,sL=0,gW=0,gL=0,found=false;
+  score.trim().split(/\s+/).forEach(tok=>{
+    const cleaned = tok.replace(/\([^)]*\)/g,''); // drop tiebreak marker e.g. (5)
+    const mm = cleaned.match(/^(\d+)-(\d+)$/);
+    if(mm){ found=true; const a=+mm[1], b=+mm[2]; gW+=a; gL+=b; if(a>b)sW++; else if(b>a)sL++; }
+  });
+  return found ? {setsW:sW,setsL:sL,gamesW:gW,gamesL:gL} : null;
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  if(current==='dash') renderDash();
+  if(current==='matches') renderMatches();
+  if(current==='opponents') renderOpponents();
+  if(current==='practices') renderPractices();
+}
+
+function renderDash(){
+  // apply the All / Singles / Doubles filter (matches with no format count as Singles)
+  const ms = matches.filter(m => (dashFilter==='all' ? true : (m.format||'Singles')===dashFilter) && inDashRange(m.date));
+  const ps = practices.filter(p => inDashRange(p.date));
+  const total = ms.length;
+  const wins = ms.filter(m=>m.result==='Win').length;
+  const losses = ms.filter(m=>m.result==='Loss').length;
+  const rate = (wins+losses) ? Math.round(wins/(wins+losses)*100) : 0;
+  const mins = ps.reduce((s,p)=>s+(+p.duration||0),0);
+  // sets & games won/lost — derived from each match score; falls back to the Sets fields when no score
+  let setsW=0,setsL=0,gamesW=0,gamesL=0;
+  ms.forEach(m=>{
+    const p = parseScore(m.score);
+    if(p){ setsW+=p.setsW; setsL+=p.setsL; gamesW+=p.gamesW; gamesL+=p.gamesL; }
+    else { setsW+=(+m.setsW||0); setsL+=(+m.setsL||0); }
+  });
+  const oppFaced = new Set(ms.map(m=>m.opponent).filter(Boolean)).size;
+  const stats = [
+    {n:total,l:'Matches played'},
+    {n:rate+'%',l:'Win rate',cls:'win'},
+    {n:wins+'–'+losses,l:'Win – Loss'},
+    {n:setsW+'–'+setsL,l:'Sets won – lost'},
+    {n:gamesW+'–'+gamesL,l:'Games won – lost'},
+    {n:oppFaced,l:'Opponents faced'},
+    {n:ps.length,l:'Practice sessions'},
+    {n:(mins>=60?(mins/60).toFixed(1)+'h':mins+'m'),l:'Time practiced'}
+  ];
+  document.getElementById('statGrid').innerHTML = stats.map(s=>
+    `<div class="stat ${s.cls||''}"><div class="n">${esc(s.n)}</div><div class="l">${esc(s.l)}</div></div>`).join('');
+
+  // surface breakdown
+  const surf = {};
+  ms.forEach(m=>{ const k=m.surface||'—'; surf[k]=surf[k]||{w:0,t:0}; surf[k].t++; if(m.result==='Win')surf[k].w++; });
+  const sKeys = Object.keys(surf).sort((a,b)=>surf[b].t-surf[a].t);
+  document.getElementById('surfaceBars').innerHTML = sKeys.length ? sKeys.map(k=>{
+    const {w,t}=surf[k]; const pct=t?Math.round(w/t*100):0;
+    return `<div class="bar-row"><span class="lbl">${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="val">${w}/${t}</span></div>`;
+  }).join('') : '<div class="hint">No matches yet.</div>';
+
+  // top opponents
+  const opp = {};
+  ms.forEach(m=>{ const k=m.opponent||'—'; opp[k]=opp[k]||{w:0,t:0}; opp[k].t++; if(m.result==='Win')opp[k].w++; });
+  const oKeys = Object.keys(opp).sort((a,b)=>opp[b].t-opp[a].t).slice(0,6);
+  document.getElementById('oppBars').innerHTML = oKeys.length ? oKeys.map(k=>{
+    const {w,t}=opp[k]; const pct=t?Math.round(w/t*100):0;
+    return `<div class="bar-row"><span class="lbl">${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="val">${w}–${t-w}</span></div>`;
+  }).join('') : '<div class="hint">No matches yet.</div>';
+
+  // practice focus: split each session's minutes evenly across its selected strokes
+  const strokeMin = {};
+  ps.forEach(p=>{
+    const dur = +p.duration||0; if(!dur) return;
+    const sel = STROKES.filter(st=>focusHas(p.focus,st)); if(!sel.length) return;
+    const share = dur/sel.length;
+    sel.forEach(st=>{ strokeMin[st]=(strokeMin[st]||0)+share; });
+  });
+  const focusTot = Object.values(strokeMin).reduce((a,b)=>a+b,0);
+  const fKeys = Object.keys(strokeMin).sort((a,b)=>strokeMin[b]-strokeMin[a]);
+  document.getElementById('focusBars').innerHTML = focusTot ? fKeys.map(k=>{
+    const pct = Math.round(strokeMin[k]/focusTot*100);
+    const mm = strokeMin[k];
+    const tlabel = mm>=60 ? (mm/60).toFixed(1)+'h' : Math.round(mm)+'m';
+    return `<div class="bar-row"><span class="lbl">${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="val" style="width:auto;min-width:82px">${pct}% \u00b7 ${tlabel}</span></div>`;
+  }).join('') : '<div class="hint">No practice focus logged yet.</div>';
+}
+
+function renderMatches(){
+  const el = document.getElementById('matchList');
+  if(!matches.length){ el.innerHTML = emptyBox('🎾','No matches yet','Tap + to log your first match.'); return; }
+  el.innerHTML = [...matches].sort(byDateDesc).map(m=>{
+    const cls = m.result==='Win'?'win':(m.result==='Loss'?'loss':'neutral');
+    const fmtLabel = m.format==='Doubles' ? ('Doubles'+(m.partner?' w/ '+esc(m.partner):'')) : 'Singles';
+    return `<div class="item" onclick="editMatch('${m.id}')">
+      <div class="main"><div class="t">vs ${esc(m.opponent||'—')}</div>
+        <div class="s">${esc(fmtDate(m.date))}${m.time?' · '+esc(m.time):''} · ${fmtLabel} · ${esc(m.surface||'')}${m.score?' · '+esc(m.score):''}</div></div>
+      <span class="pill ${cls}">${esc(m.result||'—')}</span></div>`;
+  }).join('');
+}
+
+function renderOpponents(){
+  const el = document.getElementById('oppList');
+  if(!opponents.length){ el.innerHTML = emptyBox('👤','No opponents yet','Tap + to add someone you play.'); return; }
+  el.innerHTML = [...opponents].sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(o=>{
+    const rel = matches.filter(m=>m.opponent===o.name);
+    const w = rel.filter(m=>m.result==='Win').length, l = rel.filter(m=>m.result==='Loss').length;
+    const rec = rel.length? `${w}–${l}` : 'no matches';
+    return `<div class="item" onclick="editOpponent('${o.id}')">
+      <div class="main"><div class="t">${esc(o.name||'—')}</div>
+        <div class="s">${esc([o.club,o.level,o.city].filter(Boolean).join(' · ')||'—')}</div></div>
+      <span class="pill neutral">${esc(rec)}</span></div>`;
+  }).join('');
+}
+
+function renderPractices(){
+  const el = document.getElementById('pracList');
+  if(!practices.length){ el.innerHTML = emptyBox('🏋️','No practices yet','Tap + to log a session.'); return; }
+  el.innerHTML = [...practices].sort(byDateDesc).map(p=>{
+    return `<div class="item" onclick="editPractice('${p.id}')">
+      <div class="main"><div class="t">${esc(p.focus||'Practice')}</div>
+        <div class="s">${esc(fmtDate(p.date))}${p.time?' · '+esc(p.time):''}${p.duration?' · '+esc(p.duration)+' min':''}${p.with?' · '+esc(p.with):''}</div></div>
+      <span class="pill neutral">${'●'.repeat(Math.max(0,Math.min(5,+p.intensity||0)))||'—'}</span></div>`;
+  }).join('');
+}
+
+function emptyBox(icon,title,sub){
+  return `<div class="empty"><div class="big">${icon}</div><div style="font-weight:700;color:var(--ink)">${title}</div><div style="margin-top:4px">${sub}</div></div>`;
+}
+
+/* ---------------- modal + forms ---------------- */
+const modalBg = document.getElementById('modalBg');
+function openModal(html){ document.getElementById('modal').innerHTML = html; modalBg.classList.add('show'); }
+function closeModal(){ modalBg.classList.remove('show'); }
+function val(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
+
+function optionList(arr,sel){ return arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join(''); }
+const STROKES = ['Serve','Forehand','Backhand','Volley','Drop Shot','Smash'];
+function focusHas(focus,s){ return (focus||'').toLowerCase().includes(s.toLowerCase()); }
+function selectedFocus(){ return [...document.querySelectorAll('#f_focus input:checked')].map(c=>c.value).join(', '); }
+
+function editMatch(id){
+  const m = matches.find(x=>x.id===id) || {};
+  const oppNames = opponents.map(o=>o.name).filter(Boolean);
+  const oppOptions = ['', ...oppNames];
+  openModal(`
+    <h3>${id?'Edit match':'New match'}</h3>
+    <div class="two">
+      <div><label>Date</label><input type="date" id="f_date" value="${esc(m.date||new Date().toISOString().slice(0,10))}"></div>
+      <div><label>Time</label><input type="time" id="f_time" value="${esc(m.time||'')}"></div>
+    </div>
+    <label>Result</label><select id="f_result">${optionList(['','Win','Loss'],m.result)}</select>
+    <label>Format</label>
+    <div class="seg">
+      <input type="radio" name="f_format" id="fmt_s" value="Singles" ${m.format==='Doubles'?'':'checked'} onchange="toggleFormat()">
+      <label for="fmt_s">Singles</label>
+      <input type="radio" name="f_format" id="fmt_d" value="Doubles" ${m.format==='Doubles'?'checked':''} onchange="toggleFormat()">
+      <label for="fmt_d">Doubles</label>
+    </div>
+    <div id="partnerRow" style="display:${m.format==='Doubles'?'block':'none'}">
+      <label>Partner</label>
+      <input list="oppNames" id="f_partner" value="${esc(m.partner||'')}" placeholder="Pick or type a partner">
+    </div>
+    <label>Opponent</label>
+    <input list="oppNames" id="f_opponent" value="${esc(m.opponent||'')}" placeholder="Type or pick a name">
+    <datalist id="oppNames">${oppNames.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    <div class="hint">New opponent or partner names are added to Opponents automatically.</div>
+    <div class="two">
+      <div><label>Match type</label><select id="f_type">${optionList(['','Practice','Friendly','Competitive','Tournament'],m.type)}</select></div>
+      <div><label>Surface</label><select id="f_surface">${optionList(['','Hard','Clay','Grass','Carpet'],m.surface)}</select></div>
+    </div>
+    <label>Score</label><input id="f_score" value="${esc(m.score||'')}" placeholder="e.g. 6-4 3-6 6-2">
+    <div class="two">
+      <div><label>Sets won</label><input type="number" id="f_setsW" value="${esc(m.setsW??'')}" min="0"></div>
+      <div><label>Sets lost</label><input type="number" id="f_setsL" value="${esc(m.setsL??'')}" min="0"></div>
+    </div>
+    <div class="two">
+      <div><label>Location</label><input id="f_location" value="${esc(m.location||'')}"></div>
+      <div><label>Duration (min)</label><input type="number" id="f_duration" value="${esc(m.duration??'')}" min="0"></div>
+    </div>
+    <label>Notes</label><textarea id="f_notes">${esc(m.notes||'')}</textarea>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delItem('m','${id}')">Delete</button>`:''}
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveMatch('${id||''}')">Save</button>
+    </div>`);
+}
+function toggleFormat(){
+  const d = document.getElementById('fmt_d');
+  const row = document.getElementById('partnerRow');
+  if(row) row.style.display = (d && d.checked) ? 'block' : 'none';
+}
+function addOpponentIfNew(name){
+  if(name && !opponents.some(o=>o.name===name)){
+    opponents.push({id:uid(),name:name,club:'',hand:'',level:'',city:'',contact:'',notes:''});
+    save(K.o,opponents);
+  }
+}
+function saveMatch(id){
+  const oppName = val('f_opponent');
+  const fmtEl = document.querySelector('input[name="f_format"]:checked');
+  const format = fmtEl ? fmtEl.value : 'Singles';
+  const partner = (format==='Doubles') ? val('f_partner') : '';
+  const rec = {id:id||uid(), date:val('f_date'), time:val('f_time'), format:format, partner:partner, opponent:oppName,
+    type:val('f_type'), surface:val('f_surface'), location:val('f_location'), score:val('f_score'),
+    result:val('f_result'), setsW:val('f_setsW'), setsL:val('f_setsL'), duration:val('f_duration'), notes:val('f_notes')};
+  if(id){ matches = matches.map(x=>x.id===id?rec:x); } else { matches.push(rec); }
+  // auto-add opponent and partner to the Opponents list if new
+  addOpponentIfNew(oppName);
+  addOpponentIfNew(partner);
+  save(K.m,matches); closeModal(); render();
+}
+
+function editOpponent(id){
+  const o = opponents.find(x=>x.id===id) || {};
+  openModal(`
+    <h3>${id?'Edit opponent':'New opponent'}</h3>
+    <label>Name</label><input id="f_name" value="${esc(o.name||'')}">
+    <div class="two">
+      <div><label>Club / Team</label><input id="f_club" value="${esc(o.club||'')}"></div>
+      <div><label>Handedness</label><select id="f_hand">${optionList(['','Right','Left'],o.hand)}</select></div>
+    </div>
+    <div class="two">
+      <div><label>Level / Rating</label><input id="f_level" value="${esc(o.level||'')}"></div>
+      <div><label>City</label><input id="f_city" value="${esc(o.city||'')}"></div>
+    </div>
+    <label>Contact</label><input id="f_contact" value="${esc(o.contact||'')}">
+    <label>Notes</label><textarea id="f_onotes">${esc(o.notes||'')}</textarea>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delItem('o','${id}')">Delete</button>`:''}
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="saveOpponent('${id||''}')">Save</button>
+    </div>`);
+}
+function saveOpponent(id){
+  const rec = {id:id||uid(), name:val('f_name'), club:val('f_club'), hand:val('f_hand'),
+    level:val('f_level'), city:val('f_city'), contact:val('f_contact'), notes:val('f_onotes')};
+  if(!rec.name){ alert('Please enter a name.'); return; }
+  if(id){
+    const old = opponents.find(x=>x.id===id);
+    // keep match links in sync if the name changed
+    if(old && old.name && old.name!==rec.name){ matches.forEach(m=>{ if(m.opponent===old.name) m.opponent=rec.name; }); save(K.m,matches); }
+    opponents = opponents.map(x=>x.id===id?rec:x);
+  } else { opponents.push(rec); }
+  save(K.o,opponents); closeModal(); render();
+}
+
+function editPractice(id){
+  const p = practices.find(x=>x.id===id) || {};
+  openModal(`
+    <h3>${id?'Edit practice':'New practice'}</h3>
+    <div class="two">
+      <div><label>Date</label><input type="date" id="f_pdate" value="${esc(p.date||new Date().toISOString().slice(0,10))}"></div>
+      <div><label>Time</label><input type="time" id="f_ptime" value="${esc(p.time||'')}"></div>
+    </div>
+    <div class="two">
+      <div><label>Duration (min)</label><input type="number" id="f_pdur" value="${esc(p.duration??'')}" min="0"></div>
+      <div><label>Intensity (1–5)</label><select id="f_intensity">${optionList(['','1','2','3','4','5'],String(p.intensity||''))}</select></div>
+    </div>
+    <label>Focus</label>
+    <div class="chips" id="f_focus">${STROKES.map((s,i)=>`<input type="checkbox" id="fs_${i}" value="${esc(s)}" ${focusHas(p.focus,s)?'checked':''}><label for="fs_${i}">${esc(s)}</label>`).join('')}</div>
+    <label>With</label><input list="withNames" id="f_with" value="${esc(p.with||'')}" placeholder="Pick or type">
+    <datalist id="withNames">${opponents.map(o=>o.name).filter(Boolean).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    <label>Location</label><input id="f_ploc" value="${esc(p.location||'')}">
+    <label>Notes</label><textarea id="f_pnotes">${esc(p.notes||'')}</textarea>
+    <div class="modal-actions">
+      ${id?`<button class="btn danger" onclick="delItem('p','${id}')">Delete</button>`:''}
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" onclick="savePractice('${id||''}')">Save</button>
+    </div>`);
+}
+function savePractice(id){
+  const rec = {id:id||uid(), date:val('f_pdate'), time:val('f_ptime'), focus:selectedFocus(), duration:val('f_pdur'),
+    with:val('f_with'), location:val('f_ploc'), intensity:val('f_intensity'), notes:val('f_pnotes')};
+  if(id){ practices = practices.map(x=>x.id===id?rec:x); } else { practices.push(rec); }
+  save(K.p,practices); closeModal(); render();
+}
+
+function delItem(kind,id){
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  if(kind==='m'){ matches = matches.filter(x=>x.id!==id); save(K.m,matches); }
+  if(kind==='o'){ opponents = opponents.filter(x=>x.id!==id); save(K.o,opponents); }
+  if(kind==='p'){ practices = practices.filter(x=>x.id!==id); save(K.p,practices); }
+  closeModal(); render();
+}
+
+/* ---------------- data menu: backup / export / import ---------------- */
+function openMenu(){
+  openModal(`
+    <div class="menu-sheet">
+      <h3>Data</h3>
+      <button onclick="exportJSON()">💾 Backup all data (.json)</button>
+      <button onclick="exportCSV('matches')">📄 Export Matches (.csv)</button>
+      <button onclick="exportCSV('opponents')">📄 Export Opponents (.csv)</button>
+      <button onclick="exportCSV('practices')">📄 Export Practices (.csv)</button>
+      <button onclick="document.getElementById('fileImport').click()">📥 Restore from backup (.json)</button>
+      <button onclick="closeModal()" style="color:var(--muted)">Close</button>
+    </div>`);
+}
+function download(name, text, type){
+  const blob = new Blob([text], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+function exportJSON(){
+  download('MyTennisApp_backup_'+new Date().toISOString().slice(0,10)+'.json',
+    JSON.stringify({matches,opponents,practices,exported:new Date().toISOString()},null,2),
+    'application/json'); closeModal();
+}
+function csvCell(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function exportCSV(kind){
+  let rows=[], head=[];
+  if(kind==='matches'){ head=['Date','Time','Format','Partner','Opponent','Match Type','Surface','Location','Score','Result','Sets Won','Sets Lost','Duration (min)','Notes'];
+    rows=[...matches].sort(byDateDesc).map(m=>[m.date,m.time,m.format||'Singles',m.partner,m.opponent,m.type,m.surface,m.location,m.score,m.result,m.setsW,m.setsL,m.duration,m.notes]); }
+  if(kind==='opponents'){ head=['Opponent','Club / Team','Handedness','Level / Rating','City','Contact','Notes'];
+    rows=opponents.map(o=>[o.name,o.club,o.hand,o.level,o.city,o.contact,o.notes]); }
+  if(kind==='practices'){ head=['Practice','Date','Time','Focus','Duration (min)','With','Location','Intensity (1-5)','Notes'];
+    rows=[...practices].sort(byDateDesc).map((p,i)=>['P'+String(i+1).padStart(3,'0'),p.date,p.time,p.focus,p.duration,p.with,p.location,p.intensity,p.notes]); }
+  const csv=[head, ...rows].map(r=>r.map(csvCell).join(',')).join('\n');
+  download('MyTennisApp_'+kind+'.csv', csv, 'text/csv'); closeModal();
+}
+function doImport(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if(!confirm('Restore backup? This replaces your current data.')) return;
+      matches = d.matches||[]; opponents = d.opponents||[]; practices = d.practices||[];
+      save(K.m,matches); save(K.o,opponents); save(K.p,practices);
+      closeModal(); render(); alert('Backup restored.');
+    }catch(e){ alert('That file could not be read as a MyTennisApp backup.'); }
+    ev.target.value='';
+  };
+  r.readAsText(file);
+}
+
+/* keep escape closing modal on desktop */
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+/* register the service worker for offline use + installability (only when hosted over http/https) */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+/* init */
+restoreDashRange();
+show('dash');
+
+/* ---------------- intro / splash: rotate photos, auto-dismiss after 10s; reopen via About ---------------- */
+(function(){
+  var splash = document.getElementById('splash');
+  if(!splash) return;
+
+  var photos = splash.querySelectorAll('.sp-photo');
+  var dotsWrap = document.getElementById('spDots');
+  var prog = document.getElementById('spProg');
+  var i = 0, rotateId = null, dismissId = null;
+
+  // build one dot per photo (once)
+  photos.forEach(function(){
+    var d = document.createElement('span'); d.className = 'sp-dot';
+    dotsWrap.appendChild(d);
+  });
+  var dots = dotsWrap.querySelectorAll('.sp-dot');
+
+  function setActive(n){
+    photos.forEach(function(p,idx){ p.classList.toggle('on', idx===n); });
+    dots.forEach(function(d,idx){ d.classList.toggle('on', idx===n); });
+  }
+
+  // open (initial launch or the About button): reset photos, restart the 10s countdown
+  function openSplash(){
+    clearInterval(rotateId); clearTimeout(dismissId);
+    i = 0; setActive(0);
+    document.body.classList.add('splash-lock');
+    splash.classList.remove('hide');
+    // restart the 10-second countdown progress bar
+    prog.classList.remove('run');
+    void prog.offsetWidth;                 // force reflow so the reset takes effect
+    requestAnimationFrame(function(){ prog.classList.add('run'); });
+    // cycle the 4 photos across the 10 seconds (~2.4s each)
+    rotateId = setInterval(function(){ i = (i + 1) % photos.length; setActive(i); }, 2400);
+    dismissId = setTimeout(dismissSplash, 10000); // auto-close after 10 seconds
+  }
+
+  function dismissSplash(){
+    clearInterval(rotateId); clearTimeout(dismissId);
+    splash.classList.add('hide');
+    document.body.classList.remove('splash-lock');
+  }
+
+  document.getElementById('spSkip').addEventListener('click', dismissSplash);
+  window.openAbout = openSplash;   // let the bottom "About" button reopen the intro
+  openSplash();                    // show on launch
+})();
+</script>
+</body>
+</html>
