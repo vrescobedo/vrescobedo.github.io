@@ -1,1 +1,9 @@
-    []
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.vrescobedo.mytennisapp",
+        "sha256_cert_fingerprints": ["D8:CC:08:FB:D7:2B:6D:CF:F7:DE:F9:64:AC:DC:2C:0C:21:E2:80:75:0B:B5:7F:D1:B4:79:4F:D3:ED:0B:FA:04"]
+      }
+    }]
+
