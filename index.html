@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#1f5c3f" />
-<meta name="description" content="Record your tennis matches, partners and practice sessions, and track your stats." />
+<meta name="description" content="Record your tennis matches, opponents and practice sessions, and track your stats." />
 <title>MyTennisApp</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" type="image/png" href="icon-192.png" />
@@ -57,6 +57,11 @@
   .stat .n{font-size:26px;font-weight:800;color:var(--green)}
   .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
   .stat.win .n{color:var(--win)}
+  .stat .delta{font-size:11.5px;font-weight:700;margin-top:5px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+  .stat .delta.up{color:var(--win)}
+  .stat .delta.down{color:var(--loss)}
+  .stat .delta.flat{color:var(--muted)}
+  .stat .delta .dl2{color:var(--muted);font-weight:600;font-size:10.5px}
   .bar-wrap{background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:16px}
   .bar-wrap h3{margin:0 0 12px;font-size:13.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
   .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
@@ -370,6 +375,26 @@ function parseScore(score){
   });
   return found ? {setsW:sW,setsL:sL,gamesW:gW,gamesL:gL} : null;
 }
+function metricsFor(mset,pset){
+  const total=mset.length;
+  const wins=mset.filter(m=>m.result==='Win').length;
+  const losses=mset.filter(m=>m.result==='Loss').length;
+  let setsW=0,setsL=0,gamesW=0,gamesL=0;
+  mset.forEach(m=>{ const p=parseScore(m.score);
+    if(p){ setsW+=p.setsW; setsL+=p.setsL; gamesW+=p.gamesW; gamesL+=p.gamesL; }
+    else { setsW+=(+m.setsW||0); setsL+=(+m.setsL||0); } });
+  const winPct=(wins+losses)?wins/(wins+losses)*100:0;
+  const setPct=(setsW+setsL)?setsW/(setsW+setsL)*100:0;
+  const gamePct=(gamesW+gamesL)?gamesW/(gamesW+gamesL)*100:0;
+  const mins=pset.reduce((s,p)=>s+(+p.duration||0),0);
+  return {total,wins,losses,setsW,setsL,gamesW,gamesL,winPct,setPct,gamePct,sessions:pset.length,mins};
+}
+function pctDelta(cur,prev){
+  if(prev==null) return null;
+  if(prev===0){ if(!cur) return null; return {txt:'new',up:true}; }
+  const r=Math.round((cur-prev)/Math.abs(prev)*100);
+  return {txt:Math.abs(r)+'%', up: r>0?true:(r<0?false:null)};
+}
 
 /* ---------------- render ---------------- */
 function render(){
@@ -383,31 +408,38 @@ function renderDash(){
   // apply the All / Singles / Doubles filter (matches with no format count as Singles)
   const ms = matches.filter(m => (dashFilter==='all' ? true : (m.format||'Singles')===dashFilter) && inDashRange(m.date));
   const ps = practices.filter(p => inDashRange(p.date));
-  const total = ms.length;
-  const wins = ms.filter(m=>m.result==='Win').length;
-  const losses = ms.filter(m=>m.result==='Loss').length;
-  const rate = (wins+losses) ? Math.round(wins/(wins+losses)*100) : 0;
-  const mins = ps.reduce((s,p)=>s+(+p.duration||0),0);
-  // sets & games won/lost — derived from each match score; falls back to the Sets fields when no score
-  let setsW=0,setsL=0,gamesW=0,gamesL=0;
-  ms.forEach(m=>{
-    const p = parseScore(m.score);
-    if(p){ setsW+=p.setsW; setsL+=p.setsL; gamesW+=p.gamesW; gamesL+=p.gamesL; }
-    else { setsW+=(+m.setsW||0); setsL+=(+m.setsL||0); }
-  });
+  const cur = metricsFor(ms, ps);
+  const total=cur.total, wins=cur.wins, losses=cur.losses, rate=Math.round(cur.winPct);
+  const setsW=cur.setsW, setsL=cur.setsL, gamesW=cur.gamesW, gamesL=cur.gamesL, mins=cur.mins;
   const oppFaced = new Set(ms.map(m=>m.opponent).filter(Boolean)).size;
+
+  // previous period: same-length window immediately before the selected range (only when a bounded range is active)
+  let prev=null;
+  if(dashFrom && dashTo){
+    const MS=86400000, f=new Date(dashFrom+'T00:00:00');
+    const days=Math.round((new Date(dashTo+'T00:00:00')-f)/MS)+1;
+    const pTo=isoDay(new Date(f.getTime()-MS));
+    const pFrom=isoDay(new Date(f.getTime()-days*MS));
+    const inPrev=d=> d && d>=pFrom && d<=pTo;
+    const pm=matches.filter(m=>(dashFilter==='all'?true:(m.format||'Singles')===dashFilter) && inPrev(m.date));
+    const pp=practices.filter(p=>inPrev(p.date));
+    prev=metricsFor(pm,pp);
+  }
+  const dl=(c,p)=> prev ? pctDelta(c,p) : null;
   const stats = [
-    {n:total,l:'Matches played'},
-    {n:rate+'%',l:'Win rate',cls:'win'},
-    {n:wins+'–'+losses,l:'Win – Loss'},
-    {n:setsW+'–'+setsL,l:'Sets won – lost'},
-    {n:gamesW+'–'+gamesL,l:'Games won – lost'},
+    {n:total,l:'Matches played', d:dl(cur.total, prev&&prev.total)},
+    {n:rate+'%',l:'Win rate',cls:'win', d:dl(cur.winPct, prev&&prev.winPct)},
+    {n:wins+'–'+losses,l:'Win – Loss', d:dl(cur.winPct, prev&&prev.winPct)},
+    {n:setsW+'–'+setsL,l:'Sets won – lost', d:dl(cur.setPct, prev&&prev.setPct)},
+    {n:gamesW+'–'+gamesL,l:'Games won – lost', d:dl(cur.gamePct, prev&&prev.gamePct)},
     {n:oppFaced,l:'Opponents faced'},
-    {n:ps.length,l:'Practice sessions'},
-    {n:(mins>=60?(mins/60).toFixed(1)+'h':mins+'m'),l:'Time practiced'}
+    {n:ps.length,l:'Practice sessions', d:dl(cur.sessions, prev&&prev.sessions)},
+    {n:(mins>=60?(mins/60).toFixed(1)+'h':mins+'m'),l:'Time practiced', d:dl(cur.mins, prev&&prev.mins)}
   ];
-  document.getElementById('statGrid').innerHTML = stats.map(s=>
-    `<div class="stat ${s.cls||''}"><div class="n">${esc(s.n)}</div><div class="l">${esc(s.l)}</div></div>`).join('');
+  document.getElementById('statGrid').innerHTML = stats.map(s=>{
+    const dd = s.d ? `<div class="delta ${s.d.up===true?'up':(s.d.up===false?'down':'flat')}">${s.d.up===true?'▲':(s.d.up===false?'▼':'')} ${esc(s.d.txt)} <span class="dl2">vs prev</span></div>` : '';
+    return `<div class="stat ${s.cls||''}"><div class="n">${esc(s.n)}</div><div class="l">${esc(s.l)}</div>${dd}</div>`;
+  }).join('');
 
   // surface breakdown
   const surf = {};
