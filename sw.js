@@ -1,5 +1,5 @@
 /* MyTennisApp service worker — enables offline use and installability */
-const CACHE = 'mytennis-v6';
+const CACHE = 'mytennis-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -32,8 +32,12 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        // only cache good, complete responses — never a 404 (so photos added
+        // later, e.g. city-*.jpg / jaguar-*.jpg, aren't masked by a cached miss)
+        if (resp && resp.ok && resp.type !== 'opaque') {
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        }
         return resp;
       }).catch(() => caches.match('./index.html'));
     })
