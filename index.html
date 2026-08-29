@@ -146,6 +146,8 @@
     background:#0b241b;box-shadow:0 14px 40px rgba(0,0,0,.45);border:2px solid rgba(201,232,107,.35)}
   .sp-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .9s ease}
   .sp-photo.on{opacity:1}
+  .sp-photos.sp-hide{display:none}
+  .sp-sub:empty{display:none}
   .sp-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;gap:7px;justify-content:center;z-index:2}
   .sp-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45);transition:all .3s}
   .sp-dot.on{background:var(--lime);width:20px;border-radius:4px}
@@ -173,25 +175,16 @@
 </style>
 </head>
 <body>
-<!-- ===================== INTRO / SPLASH (shows for 10s on launch) ===================== -->
+<!-- =============== INTRO / ABOUT (10s on launch; content by device timezone) =============== -->
 <div id="splash" role="dialog" aria-label="MyTennisApp intro">
   <div class="sp-inner">
     <div class="sp-brand"><span class="sp-ball"></span> MyTennisApp</div>
-    <div class="sp-photos">
-      <img class="sp-photo on" src="bolsa-1.jpg" alt="Ricardo Escobedo recibiendo un premio" />
-      <img class="sp-photo" src="bolsa-2.jpg" alt="Ricardo Escobedo en la cancha de tenis" />
-      <img class="sp-photo" src="bolsa-3.jpg" alt="Ricardo Escobedo con una medalla de oro" />
-      <img class="sp-photo" src="bolsa-4.jpg" alt="Ricardo Escobedo homenajeado en el escenario" />
-      <div class="sp-dots" id="spDots"></div>
-    </div>
-    <div class="sp-tagline">Encordado de raquetas por</div>
-    <div class="sp-name">Ricardo &ldquo;Bolsa&rdquo; Escobedo</div>
-    <div class="sp-sub">Encordado y reencordado profesional de raquetas</div>
-    <div class="sp-contact">
-      <a class="sp-row tel" href="https://wa.me/51999715301?text=Hola%20Richi%2C%20quisiera%20encordar%20mi%20raqueta" target="_blank" rel="noopener"><span class="sp-ic">💬</span><span>+51&nbsp;999&nbsp;715&nbsp;301</span></a>
-      <div class="sp-row"><span class="sp-ic">📍</span><span>Magdalena del Mar, Lima</span></div>
-    </div>
-    <button class="sp-skip" id="spSkip" type="button">Entrar a la app ›</button>
+    <div class="sp-photos" id="spPhotos"></div>
+    <div class="sp-tagline" id="spTagline"></div>
+    <div class="sp-name" id="spName"></div>
+    <div class="sp-sub" id="spSub"></div>
+    <div class="sp-contact" id="spContact"></div>
+    <button class="sp-skip" id="spSkip" type="button">Enter app ›</button>
     <div class="sp-progress"><div class="sp-progbar" id="spProg"></div></div>
   </div>
 </div>
@@ -739,40 +732,182 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 restoreDashRange();
 show('dash');
 
-/* ---------------- intro / splash: rotate photos, auto-dismiss after 10s; reopen via About ---------------- */
+/* =========================================================================
+   INTRO / ABOUT SCREEN — content changes with the device timezone (country)
+   -------------------------------------------------------------------------
+   TO EDIT THE CONTENT: change the ABOUT object below. Each entry is one
+   country variant. To add a country, add an entry here and list its
+   timezone(s) in TZ_TO_VARIANT. 'DEFAULT' is shown to everyone else.
+   Contact types: 'whatsapp' | 'facebook' | 'website' | 'phone'.
+   Photos are optional — if the image files are missing, the photo frame
+   is simply hidden (the rest of the screen still shows).
+   Preview any variant on any device by adding ?about=PE (or US / DEFAULT)
+   to the URL.
+   ========================================================================= */
+var ABOUT = {
+  PE: {
+    tagline: 'Encordado de Raquetas por',
+    name:    'Ricardo “Bolsa” Escobedo',
+    subtitle:'Encordado Profesional de Raquetas de tenis desde las 8:00 am hasta las 22:00 pm',
+    contactType: 'whatsapp',
+    contactValue:'+51 999715301',
+    waMessage:  'Hola Richi, quisiera encordar mi raqueta. Estas disponible?',
+    location:   'Magdalena del Mar, Lima',
+    photos:  ['bolsa-1.jpg','bolsa-2.jpg','bolsa-3.jpg','bolsa-4.jpg'],
+    button:  'Entrar a la app ›'
+  },
+  US: {
+    tagline: 'My City Tennis',
+    name:    'by Martin Escobedo',
+    subtitle:'We are dedicated to creating memorable Tennis Tournaments for our tennis players!',
+    contactType: 'facebook',
+    contactValue:'https://www.facebook.com/mycitytennis',
+    location:   'Miami Beach, Miami, Coral Gables, Pinecrest',
+    photos:  ['city-1.jpg','city-2.jpg','city-3.jpg','city-4.jpg'],
+    button:  'Enter app ›'
+  },
+  DEFAULT: {
+    tagline: 'Jaguar Aventura Tours',
+    name:    'by Victor Escobedo',
+    subtitle:'Visit Peru, Ecuador, Bolivia and Chile and play tennis with us!',
+    contactType: 'website',
+    contactValue:'https://en.jaguaraventuratours.com/',
+    location:   '',
+    photos:  ['jaguar-1.jpg','jaguar-2.jpg','jaguar-3.jpg','jaguar-4.jpg'],
+    button:  'Enter app ›'
+  }
+};
+
+/* Map IANA timezones -> variant key. Everything not listed uses DEFAULT. */
+var TZ_TO_VARIANT = {
+  'America/Lima':'PE',
+  // United States (all IANA zones)
+  'America/New_York':'US','America/Detroit':'US','America/Kentucky/Louisville':'US',
+  'America/Kentucky/Monticello':'US','America/Indiana/Indianapolis':'US','America/Indiana/Vincennes':'US',
+  'America/Indiana/Winamac':'US','America/Indiana/Marengo':'US','America/Indiana/Petersburg':'US',
+  'America/Indiana/Vevay':'US','America/Chicago':'US','America/Indiana/Tell_City':'US',
+  'America/Indiana/Knox':'US','America/Menominee':'US','America/North_Dakota/Center':'US',
+  'America/North_Dakota/New_Salem':'US','America/North_Dakota/Beulah':'US','America/Denver':'US',
+  'America/Boise':'US','America/Phoenix':'US','America/Los_Angeles':'US','America/Anchorage':'US',
+  'America/Juneau':'US','America/Sitka':'US','America/Metlakatla':'US','America/Yakutat':'US',
+  'America/Nome':'US','America/Adak':'US','Pacific/Honolulu':'US'
+};
+
+/* Pick the variant from ?about= override, then timezone, then language, then DEFAULT. */
+function pickAboutVariant(){
+  try{
+    var q = new URLSearchParams(location.search).get('about');
+    if(q && ABOUT[q.toUpperCase()]) return q.toUpperCase();
+  }catch(e){}
+  var tz = '';
+  try{ tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }catch(e){}
+  if(TZ_TO_VARIANT[tz]) return TZ_TO_VARIANT[tz];
+  var lang = (navigator.language || '').toLowerCase();
+  if(lang === 'es-pe') return 'PE';
+  if(lang.indexOf('en-us') === 0) return 'US';
+  return 'DEFAULT';
+}
+
 (function(){
   var splash = document.getElementById('splash');
   if(!splash) return;
+  var frame = document.getElementById('spPhotos');
+  var prog  = document.getElementById('spProg');
+  var photoEls = [], dots = [], i = 0, rotateId = null, dismissId = null;
 
-  var photos = splash.querySelectorAll('.sp-photo');
-  var dotsWrap = document.getElementById('spDots');
-  var prog = document.getElementById('spProg');
-  var i = 0, rotateId = null, dismissId = null;
+  function prettyUrl(u){ return String(u||'').replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,''); }
 
-  // build one dot per photo (once)
-  photos.forEach(function(){
-    var d = document.createElement('span'); d.className = 'sp-dot';
-    dotsWrap.appendChild(d);
-  });
-  var dots = dotsWrap.querySelectorAll('.sp-dot');
+  function makeRow(icon, text, href){
+    var el = href ? document.createElement('a') : document.createElement('div');
+    el.className = 'sp-row' + (href ? ' tel' : '');
+    if(href){ el.href = href; el.target = '_blank'; el.rel = 'noopener'; }
+    var ic = document.createElement('span'); ic.className = 'sp-ic'; ic.textContent = icon;
+    var tx = document.createElement('span'); tx.textContent = text;
+    el.appendChild(ic); el.appendChild(tx);
+    return el;
+  }
+
+  function buildContact(v){
+    var wrap = document.getElementById('spContact');
+    wrap.innerHTML = '';
+    var t = v.contactType, val = v.contactValue || '', row = null;
+    if(t === 'whatsapp'){
+      var digits = val.replace(/[^0-9]/g,'');
+      var href = 'https://wa.me/' + digits + (v.waMessage ? ('?text=' + encodeURIComponent(v.waMessage)) : '');
+      row = makeRow('💬', val, href);
+    } else if(t === 'facebook'){
+      row = makeRow('📘', prettyUrl(val), val);
+    } else if(t === 'website'){
+      row = makeRow('🌐', prettyUrl(val), val);
+    } else if(val){
+      row = makeRow('📞', val, 'tel:' + val.replace(/[^0-9+]/g,''));
+    }
+    if(row) wrap.appendChild(row);
+    if(v.location) wrap.appendChild(makeRow('📍', v.location, null));
+    wrap.style.display = wrap.children.length ? 'flex' : 'none';
+  }
+
+  /* keep only photos whose files actually load (preserves order); callback gets the list */
+  function resolvePhotos(list, cb){
+    list = list || [];
+    var ok = {}, pending = list.length;
+    if(!pending){ cb([]); return; }
+    list.forEach(function(src){
+      var im = new Image();
+      im.onload  = function(){ ok[src] = true; done(); };
+      im.onerror = function(){ done(); };
+      im.src = src;
+    });
+    function done(){ if(--pending === 0) cb(list.filter(function(s){ return ok[s]; })); }
+  }
+
+  function buildPhotos(list){
+    frame.innerHTML = '';
+    photoEls = []; dots = [];
+    if(!list.length){ frame.classList.add('sp-hide'); return; }
+    frame.classList.remove('sp-hide');
+    list.forEach(function(src, idx){
+      var im = document.createElement('img');
+      im.className = 'sp-photo' + (idx===0 ? ' on' : '');
+      im.src = src; im.alt = '';
+      frame.appendChild(im); photoEls.push(im);
+    });
+    var dotsWrap = document.createElement('div'); dotsWrap.className = 'sp-dots';
+    list.forEach(function(_, idx){
+      var d = document.createElement('span'); d.className = 'sp-dot' + (idx===0 ? ' on' : '');
+      dotsWrap.appendChild(d); dots.push(d);
+    });
+    frame.appendChild(dotsWrap);
+  }
 
   function setActive(n){
-    photos.forEach(function(p,idx){ p.classList.toggle('on', idx===n); });
+    photoEls.forEach(function(p,idx){ p.classList.toggle('on', idx===n); });
     dots.forEach(function(d,idx){ d.classList.toggle('on', idx===n); });
   }
 
-  // open (initial launch or the About button): reset photos, restart the 10s countdown
+  function renderVariant(v){
+    document.getElementById('spTagline').textContent = v.tagline || '';
+    document.getElementById('spName').textContent    = v.name || '';
+    document.getElementById('spSub').textContent     = v.subtitle || '';
+    document.getElementById('spSkip').textContent    = v.button || 'Enter app ›';
+    buildContact(v);
+    resolvePhotos(v.photos, function(available){ buildPhotos(available); i = 0; setActive(0); });
+  }
+
   function openSplash(){
     clearInterval(rotateId); clearTimeout(dismissId);
-    i = 0; setActive(0);
+    renderVariant(ABOUT[pickAboutVariant()] || ABOUT.DEFAULT);
+    i = 0;
     document.body.classList.add('splash-lock');
     splash.classList.remove('hide');
     // restart the 10-second countdown progress bar
     prog.classList.remove('run');
     void prog.offsetWidth;                 // force reflow so the reset takes effect
     requestAnimationFrame(function(){ prog.classList.add('run'); });
-    // cycle the 4 photos across the 10 seconds (~2.4s each)
-    rotateId = setInterval(function(){ i = (i + 1) % photos.length; setActive(i); }, 2400);
+    // cycle the photos across the 10 seconds (~2.4s each)
+    rotateId = setInterval(function(){
+      if(photoEls.length){ i = (i + 1) % photoEls.length; setActive(i); }
+    }, 2400);
     dismissId = setTimeout(dismissSplash, 10000); // auto-close after 10 seconds
   }
 
