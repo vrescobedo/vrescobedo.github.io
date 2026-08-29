@@ -128,6 +128,23 @@
   .menu-sheet button:last-child{border-bottom:0}
   .hint{font-size:11.5px;color:var(--muted);margin-top:5px}
   .fileimport{display:none}
+  /* ---------------- practice celebration ---------------- */
+  #celebrate{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;pointer-events:none}
+  #celebrate.show{display:flex;pointer-events:auto}
+  #celebrateCanvas{position:absolute;inset:0;width:100%;height:100%}
+  .cel-card{position:relative;background:rgba(16,50,39,.93);color:#fff;border-radius:20px;
+    padding:24px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.45);
+    border:2px solid rgba(201,232,107,.45);max-width:82vw;animation:celPop .5s cubic-bezier(.2,1.3,.4,1)}
+  @keyframes celPop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+  .cel-emoji{font-size:62px;line-height:1;margin-bottom:6px;animation:celBounce 1s ease infinite}
+  @keyframes celBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .cel-title{font-size:22px;font-weight:800;color:var(--lime)}
+  .cel-msg{font-size:14.5px;margin-top:6px;color:#dff0e4;max-width:280px}
+  .cel-badge{display:inline-block;margin-top:13px;background:var(--lime);color:var(--green-dark);
+    font-weight:800;font-size:12.5px;padding:6px 13px;border-radius:999px;letter-spacing:.02em}
+  .cel-badge[hidden]{display:none}
+  .cel-tap{font-size:11px;color:#a9c9b6;margin-top:12px}
+  @media (prefers-reduced-motion: reduce){ .cel-emoji,.cel-card{animation:none} }
   /* ---------------- intro / splash ---------------- */
   #splash{position:fixed;inset:0;z-index:9999;
     background:linear-gradient(160deg,#2a6a49 0%,var(--green) 30%,var(--green-dark) 72%,#0b241b 100%);
@@ -259,6 +276,18 @@
 
 <input type="file" id="fileImport" class="fileimport" accept="application/json" onchange="doImport(event)" />
 
+<!-- ===================== PRACTICE CELEBRATION ===================== -->
+<div id="celebrate" aria-hidden="true">
+  <canvas id="celebrateCanvas"></canvas>
+  <div class="cel-card">
+    <div class="cel-emoji" id="celEmoji">🎾</div>
+    <div class="cel-title" id="celTitle">Nice work!</div>
+    <div class="cel-msg" id="celMsg"></div>
+    <div class="cel-badge" id="celBadge" hidden></div>
+    <div class="cel-tap">tap to continue</div>
+  </div>
+</div>
+
 <script>
 /* ---------------- storage ---------------- */
 const K = {m:'tennis_matches', o:'tennis_opponents', p:'tennis_practices'};
@@ -283,6 +312,7 @@ let dashFilter = 'all';   // 'all' | 'Singles' | 'Doubles' — dashboard stats f
 let dashFrom = '';        // dashboard date-range start (YYYY-MM-DD); '' = open
 let dashTo   = '';        // dashboard date-range end   (YYYY-MM-DD); '' = open
 let dashPreset = '';      // '' | '30' | '60' | '90' | 'year' — active quick preset
+let celebrateSound = (localStorage.getItem('tennis_sound') !== 'off'); // celebration fanfare on/off (default on)
 function setDashFilter(f){
   dashFilter = f;
   document.querySelectorAll('#dashFilter button').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
@@ -656,8 +686,10 @@ function editPractice(id){
 function savePractice(id){
   const rec = {id:id||uid(), date:val('f_pdate'), time:val('f_ptime'), focus:selectedFocus(), duration:val('f_pdur'),
     with:val('f_with'), location:val('f_ploc'), intensity:val('f_intensity'), notes:val('f_pnotes')};
+  const isNew = !id;
   if(id){ practices = practices.map(x=>x.id===id?rec:x); } else { practices.push(rec); }
   save(K.p,practices); closeModal(); render();
+  if(isNew) celebratePractice();   // 🎾 cheer the user for logging a practice
 }
 
 function delItem(kind,id){
@@ -678,8 +710,16 @@ function openMenu(){
       <button onclick="exportCSV('opponents')">📄 Export Opponents (.csv)</button>
       <button onclick="exportCSV('practices')">📄 Export Practices (.csv)</button>
       <button onclick="document.getElementById('fileImport').click()">📥 Restore from backup (.json)</button>
+      <button onclick="toggleCelebrateSound()" id="soundToggleBtn">${celebrateSound?'🔊 Celebration sound: On':'🔇 Celebration sound: Off'}</button>
       <button onclick="closeModal()" style="color:var(--muted)">Close</button>
     </div>`);
+}
+function toggleCelebrateSound(){
+  celebrateSound = !celebrateSound;
+  localStorage.setItem('tennis_sound', celebrateSound ? 'on' : 'off');
+  const b = document.getElementById('soundToggleBtn');
+  if(b) b.textContent = celebrateSound ? '🔊 Celebration sound: On' : '🔇 Celebration sound: Off';
+  if(celebrateSound) playFanfare(false);   // little preview when switching on
 }
 function download(name, text, type){
   const blob = new Blob([text], {type});
@@ -727,6 +767,119 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
+
+/* ---------------- practice celebration (confetti + synthesized fanfare) ---------------- */
+let _celTimer=null, _celRAF=null, _actx=null;
+
+function _audioCtx(){
+  if(_actx) return _actx;
+  try{ _actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ _actx=null; }
+  return _actx;
+}
+/* short triumphant fanfare, built live with oscillators — no audio files needed */
+function playFanfare(big){
+  if(!celebrateSound) return;
+  const ac=_audioCtx(); if(!ac) return;
+  if(ac.state==='suspended'){ try{ ac.resume(); }catch(e){} }
+  const now=ac.currentTime;
+  const master=ac.createGain(); master.gain.value=0.22; master.connect(ac.destination);
+  function note(freq,start,dur,type){
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.type=type||'triangle'; o.frequency.value=freq; o.connect(g); g.connect(master);
+    const t=now+start;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.5,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.start(t); o.stop(t+dur+0.03);
+  }
+  [523.25,659.25,783.99,1046.5].forEach((f,i)=>note(f,i*0.11,0.34,'triangle')); // C5 E5 G5 C6
+  if(big){
+    note(1318.51,0.52,0.5,'triangle'); note(1567.98,0.64,0.55,'triangle'); note(2093.0,0.76,0.6,'triangle');
+    [1046.5,1318.51,1567.98].forEach((f,i)=>note(f,0.9+i*0.015,0.9,'sine')); // final chord
+  }
+}
+function _runConfetti(amount){
+  const canvas=document.getElementById('celebrateCanvas');
+  const ctx=canvas.getContext('2d');
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const W=canvas.clientWidth||window.innerWidth, H=canvas.clientHeight||window.innerHeight;
+  canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const N=reduce?Math.round(amount*0.35):amount;
+  const colors=['#c9e86b','#1f8a52','#ffd54a','#ff5e9c','#ffffff','#ff8a3d','#1f5c3f'];
+  const parts=[];
+  for(let i=0;i<N;i++){
+    parts.push({x:W*(0.2+0.6*Math.random()), y:H*0.5-40+(Math.random()*40-20),
+      vx:(Math.random()-0.5)*7, vy:-6-Math.random()*7, g:0.18+Math.random()*0.12,
+      size:6+Math.random()*7, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.3,
+      color:colors[i%colors.length], life:0, ttl:90+Math.random()*45, shape:Math.random()<0.5?'r':'c'});
+  }
+  cancelAnimationFrame(_celRAF);
+  (function frame(){
+    ctx.clearRect(0,0,W,H);
+    let alive=false;
+    parts.forEach(p=>{
+      if(p.life>p.ttl) return; p.life++; alive=true;
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vx*=0.99;
+      const a=Math.max(0,1-p.life/p.ttl);
+      ctx.save(); ctx.globalAlpha=a; ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.color;
+      if(p.shape==='r') ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+      else { ctx.beginPath(); ctx.arc(0,0,p.size/2,0,6.28); ctx.fill(); }
+      ctx.restore();
+    });
+    if(alive) _celRAF=requestAnimationFrame(frame); else ctx.clearRect(0,0,W,H);
+  })();
+}
+const CHEERS=[
+  "Another session in the books!","Your future self says thanks.","Reps make champions. 💪",
+  "That's how progress is built.","Consistency is your superpower.","Great job showing up today!",
+  "One more step toward your goals.","Every session counts. Keep going!"
+];
+function currentStreak(){
+  const days=new Set(practices.map(p=>p.date).filter(Boolean));
+  if(!days.size) return 0;
+  const latest=[...days].sort().pop();
+  let streak=0, d=new Date(latest+'T00:00:00');
+  while(days.has(isoDay(d))){ streak++; d.setDate(d.getDate()-1); }
+  return streak;
+}
+function celebratePractice(){
+  const count=practices.length, streak=currentStreak();
+  let emoji='🎾', title='Nice work!', msg=CHEERS[Math.floor(Math.random()*CHEERS.length)], badge='', big=false;
+  // milestone (biggest applicable wins)
+  if(count===1){ emoji='🎉'; title='First practice logged!'; msg='The journey begins — keep it going!'; badge='🏁 Session #1'; big=true; }
+  else if(count%100===0){ emoji='👑'; title=count+' practices!'; msg='Absolutely legendary dedication.'; badge='🏆 '+count+' sessions'; big=true; }
+  else if(count%50===0){ emoji='🏆'; title=count+' practices!'; msg='Elite consistency. Incredible.'; badge='🏆 '+count+' sessions'; big=true; }
+  else if(count%25===0){ emoji='🥇'; title=count+' practices!'; msg='Milestone unlocked — keep crushing it!'; badge='⭐ '+count+' sessions'; big=true; }
+  else if(count%10===0){ emoji='🔥'; title=count+' practices!'; msg='Double digits and climbing!'; badge='⭐ '+count+' sessions'; big=true; }
+  // a day streak can add a badge and (for 5+) upgrade to a big celebration
+  if(streak>=3){
+    if(streak>=5) big=true;
+    badge = badge ? (badge+' · 🔥 '+streak+'-day streak') : ('🔥 '+streak+'-day streak');
+    if(!big && count%10!==0 && count!==1){ emoji='🔥'; title=streak+'-day streak!'; msg='On fire — '+streak+' days in a row!'; }
+  }
+  _showCelebration(emoji,title,msg,badge,big);
+}
+function _showCelebration(emoji,title,msg,badge,big){
+  const el=document.getElementById('celebrate');
+  document.getElementById('celEmoji').textContent=emoji;
+  document.getElementById('celTitle').textContent=title;
+  document.getElementById('celMsg').textContent=msg;
+  const b=document.getElementById('celBadge');
+  if(badge){ b.textContent=badge; b.hidden=false; } else { b.hidden=true; }
+  el.classList.add('show'); el.setAttribute('aria-hidden','false');
+  _runConfetti(big?260:120);
+  playFanfare(big);
+  clearTimeout(_celTimer);
+  _celTimer=setTimeout(hideCelebration, big?3300:2400);
+}
+function hideCelebration(){
+  const el=document.getElementById('celebrate');
+  el.classList.remove('show'); el.setAttribute('aria-hidden','true');
+  cancelAnimationFrame(_celRAF);
+  const c=document.getElementById('celebrateCanvas'); const cx=c.getContext('2d'); cx&&cx.clearRect(0,0,c.width,c.height);
+}
+document.getElementById('celebrate').addEventListener('click', hideCelebration);
 
 /* init */
 restoreDashRange();
