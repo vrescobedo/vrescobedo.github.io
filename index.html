@@ -28,6 +28,7 @@
     position:sticky;top:0;z-index:20;box-shadow:var(--shadow)}
   header .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
   header h1{font-size:19px;margin:0;display:flex;align-items:center;gap:9px;font-weight:700}
+  header h1 .hello{font-weight:600;font-size:13px;opacity:.92;margin-left:2px;padding-left:10px;border-left:1px solid rgba(255,255,255,.4);white-space:nowrap}
   .ball{width:22px;height:22px;border-radius:50%;background:var(--lime);position:relative;flex:0 0 auto}
   .ball::before,.ball::after{content:"";position:absolute;inset:0;border:2px solid var(--green-dark);
     border-radius:50%;clip-path:inset(0 50% 0 0)}
@@ -208,7 +209,7 @@
 
 <header>
   <div class="row">
-    <h1><span class="ball"></span> MyTennisApp</h1>
+    <h1><span class="ball"></span> MyTennisApp<span id="helloName" class="hello"></span></h1>
     <div class="hbtns">
       <button class="hbtn" onclick="openMenu()">Data ▾</button>
     </div>
@@ -224,10 +225,10 @@
       <button data-f="Doubles" onclick="setDashFilter('Doubles')">Doubles</button>
     </div>
     <div class="dpresets" id="dashPresets">
+      <button data-p="7" onclick="applyPreset('7')">Last 7 days</button>
       <button data-p="30" onclick="applyPreset('30')">Last 30 days</button>
-      <button data-p="60" onclick="applyPreset('60')">Last 60 days</button>
       <button data-p="90" onclick="applyPreset('90')">Last 90 days</button>
-      <button data-p="year" onclick="applyPreset('year')">This Year</button>
+      <button data-p="year" onclick="applyPreset('year')">Last Year</button>
     </div>
     <div class="drange">
       <label>From<input type="date" id="dashFrom" onchange="setDashRange()"></label>
@@ -306,6 +307,54 @@ if(!localStorage.getItem('tennis_seeded')){
   localStorage.setItem('tennis_seeded','1');
 }
 
+/* ---------------- player profile ---------------- */
+const PROFILE_KEY = 'tennis_profile';
+function loadProfile(){ try{ return JSON.parse(localStorage.getItem(PROFILE_KEY)) || null; }catch(e){ return null; } }
+function saveProfileData(p){ localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }
+function hasProfile(){ return !!(profile && profile.firstName && String(profile.firstName).trim()); }
+let profile = loadProfile();
+let onboarding = false;
+function greetWord(){
+  const h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+function renderHello(){
+  const el = document.getElementById('helloName');
+  if(el) el.textContent = (profile && profile.firstName) ? (greetWord() + ' ' + profile.firstName + '!') : '';
+}
+function profileFormHTML(p, isSetup){
+  p = p || {};
+  return `
+    <h3>${isSetup ? 'Welcome to MyTennisApp' : 'Player profile'}</h3>
+    ${isSetup ? '<p class="hint">Tell us about you, the tennis player. You can update this anytime from the Data menu.</p>' : ''}
+    <div class="two">
+      <div><label>First name</label><input id="f_pfirst" value="${esc(p.firstName||'')}"></div>
+      <div><label>Last name</label><input id="f_plast" value="${esc(p.lastName||'')}"></div>
+    </div>
+    <div class="two">
+      <div><label>Playing hand</label><select id="f_phand">${optionList(['Right','Left'], p.hand||'Right')}</select></div>
+      <div><label>UTR (Universal Tennis Rating)</label><input id="f_putr" type="number" step="0.01" min="1" max="16.5" value="${esc(p.utr==null?'':p.utr)}" placeholder="e.g. 6.25"></div>
+    </div>
+    <div class="modal-actions">
+      ${isSetup ? '' : '<button class="btn ghost" onclick="closeModal()">Cancel</button>'}
+      <button class="btn primary" onclick="saveProfileForm(${isSetup ? 'true' : 'false'})">${isSetup ? 'Get started' : 'Save'}</button>
+    </div>`;
+}
+function openProfileSetup(){ onboarding = true; openModal(profileFormHTML(profile||{}, true)); }
+function editProfile(){ openModal(profileFormHTML(profile||{}, false)); }
+function saveProfileForm(isSetup){
+  const first = val('f_pfirst'), last = val('f_plast');
+  if(!first){ alert('Please enter your first name.'); return; }
+  if(!last){ alert('Please enter your last name.'); return; }
+  profile = { firstName:first, lastName:last, hand:(val('f_phand')||'Right'), utr:val('f_putr') };
+  saveProfileData(profile);
+  onboarding = false;
+  closeModal();
+  renderHello();
+}
+
 /* ---------------- view switching ---------------- */
 let current = 'dash';
 let dashFilter = 'all';   // 'all' | 'Singles' | 'Doubles' — dashboard stats filter
@@ -322,7 +371,7 @@ function isoDay(dt){ const z=new Date(dt.getTime()-dt.getTimezoneOffset()*60000)
 function presetRange(preset){
   const today=new Date(), to=isoDay(today);
   let from;
-  if(preset==='year'){ from=isoDay(new Date(today.getFullYear(),0,1)); }
+  if(preset==='year'){ const d=new Date(today); d.setDate(d.getDate()-364); from=isoDay(d); }
   else { const d=new Date(today); d.setDate(d.getDate()-(+preset-1)); from=isoDay(d); }
   return {from,to};
 }
@@ -359,7 +408,7 @@ function clearDashRange(){
 }
 function restoreDashRange(){
   let r=null; try{ r=JSON.parse(localStorage.getItem('tennis_dashrange')); }catch(e){}
-  if(!r) return;
+  if(!r){ applyPreset('7', false); return; }   /* default to Last 7 days on first open */
   if(r.preset){ applyPreset(r.preset, false); }
   else { dashFrom=r.from||''; dashTo=r.to||''; reflectRangeInputs(); }
 }
@@ -545,7 +594,7 @@ function emptyBox(icon,title,sub){
 /* ---------------- modal + forms ---------------- */
 const modalBg = document.getElementById('modalBg');
 function openModal(html){ document.getElementById('modal').innerHTML = html; modalBg.classList.add('show'); }
-function closeModal(){ modalBg.classList.remove('show'); }
+function closeModal(){ if(onboarding) return; modalBg.classList.remove('show'); }
 function val(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 
 function optionList(arr,sel){ return arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join(''); }
@@ -705,6 +754,7 @@ function openMenu(){
   openModal(`
     <div class="menu-sheet">
       <h3>Data</h3>
+      <button onclick="editProfile()">🎾 Player profile</button>
       <button onclick="exportJSON()">💾 Backup all data (.json)</button>
       <button onclick="exportCSV('matches')">📄 Export Matches (.csv)</button>
       <button onclick="exportCSV('opponents')">📄 Export Opponents (.csv)</button>
@@ -729,7 +779,7 @@ function download(name, text, type){
 }
 function exportJSON(){
   download('MyTennisApp_backup_'+new Date().toISOString().slice(0,10)+'.json',
-    JSON.stringify({matches,opponents,practices,exported:new Date().toISOString()},null,2),
+    JSON.stringify({matches,opponents,practices,profile,exported:new Date().toISOString()},null,2),
     'application/json'); closeModal();
 }
 function csvCell(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
@@ -753,6 +803,7 @@ function doImport(ev){
       if(!confirm('Restore backup? This replaces your current data.')) return;
       matches = d.matches||[]; opponents = d.opponents||[]; practices = d.practices||[];
       save(K.m,matches); save(K.o,opponents); save(K.p,practices);
+      if(d.profile){ profile = d.profile; saveProfileData(profile); renderHello(); }
       closeModal(); render(); alert('Backup restored.');
     }catch(e){ alert('That file could not be read as a MyTennisApp backup.'); }
     ev.target.value='';
@@ -884,6 +935,7 @@ document.getElementById('celebrate').addEventListener('click', hideCelebration);
 /* init */
 restoreDashRange();
 show('dash');
+renderHello();
 
 /* =========================================================================
    INTRO / ABOUT SCREEN — content changes with the device timezone (country)
@@ -1068,6 +1120,7 @@ function pickAboutVariant(){
     clearInterval(rotateId); clearTimeout(dismissId);
     splash.classList.add('hide');
     document.body.classList.remove('splash-lock');
+    if(typeof hasProfile === 'function' && !hasProfile() && typeof openProfileSetup === 'function'){ openProfileSetup(); }
   }
 
   document.getElementById('spSkip').addEventListener('click', dismissSplash);
