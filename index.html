@@ -46,6 +46,7 @@
   :root[data-theme="dark"] .rm .p.win{background:rgba(58,176,110,.18);color:#6fd39a}
   :root[data-theme="dark"] .rm .p.loss{background:rgba(224,105,95,.18);color:#f0897f}
   :root[data-theme="dark"] .hstat .n{color:#5cc985}
+  :root[data-theme="dark"] .fchip{background:#1e2b23;color:#6fd39a}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
@@ -156,6 +157,33 @@
   .rm .p.win{background:#e3f4ea;color:var(--win)}
   .rm .p.loss{background:#fbe6e4;color:var(--loss)}
   .notecard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:13.5px;line-height:1.5}
+  /* practices tab */
+  .wcard{background:var(--card);border-radius:14px;padding:14px 16px 12px;box-shadow:var(--shadow);margin-bottom:18px}
+  .wcard h3{margin:0 0 2px;font-size:12.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .wcap{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .wcap b{color:var(--ink);font-weight:700}
+  .wchart{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:92px}
+  .wchart .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}
+  .wchart .cn{font-size:11px;font-weight:800;color:var(--muted)}
+  .wchart .bar{width:100%;max-width:26px;background:linear-gradient(180deg,var(--lime-dark),var(--green));border-radius:6px 6px 3px 3px}
+  .wchart .col.now .cn{color:var(--green)}
+  .wchart .col.now .bar{background:var(--green)}
+  .wchart .cl{font-size:10px;color:var(--muted);font-weight:600}
+  .wchart .col.now .cl{color:var(--green);font-weight:800}
+  .wk{display:flex;align-items:baseline;justify-content:space-between;margin:6px 2px 10px}
+  .wk-t{font-size:14px;font-weight:800}
+  .wk-s{font-size:12px;color:var(--muted);font-weight:600}
+  .pr{display:flex;align-items:flex-start;gap:12px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:13px 14px;margin-bottom:11px;cursor:pointer}
+  .pr:active{transform:scale(.995)}
+  .pr .main{flex:1;min-width:0}
+  .pr .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .pr .t{font-weight:700;font-size:15.5px}
+  .dur{font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap;flex:0 0 auto}
+  .mchip{font-size:12px;color:var(--muted);font-weight:600}
+  .inten{letter-spacing:1.5px;color:var(--green);font-size:12px}
+  .inten .off{color:var(--line)}
+  .focus{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .fchip{font-size:11.5px;font-weight:700;color:var(--green);background:#eaf3ec;border-radius:7px;padding:3px 9px}
   .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .pill.win{background:#e3f4ea;color:var(--win)}
   .pill.loss{background:#fbe6e4;color:var(--loss)}
@@ -349,7 +377,7 @@
 
   <!-- PRACTICES -->
   <section id="v-practices" class="view">
-    <h2 class="sec">Practices</h2>
+    <div class="sechead"><h2 class="sec">Practices</h2><span class="count" id="pracCount"></span></div>
     <div id="pracList"></div>
   </section>
 </main>
@@ -770,15 +798,71 @@ function openOppProfile(id){
     </div>`);
 }
 
+const PR_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12h3l2.5-6 4 13 2.5-7H21" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function weekStart(dt){ const d=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); return d; }
+function weekStartISO(dateStr){ return isoDay(weekStart(new Date(dateStr+'T00:00:00'))); }
+function chartLabel(iso){ const dt=new Date(iso+'T00:00:00'); return isNaN(dt)?iso:dt.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+function fmtPracDate(iso){ if(!iso) return ''; const dt=new Date(iso+'T00:00:00'); return isNaN(dt)?iso:dt.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}); }
+function intensityDots(v){ const n=Math.max(0,Math.min(5,+v||0)); if(!n) return ''; let out='<span class="inten">'; for(let i=0;i<5;i++){ out += i<n?'●':'<span class="off">●</span>'; } return out+'</span>'; }
+function practiceCard(p){
+  const person = (p.with||'').trim();
+  const av = person ? esc(oppInitials(person)) : PR_ICON;
+  const title = person ? esc(person) : 'Solo session';
+  const dur = p.duration ? esc(p.duration)+' min' : '';
+  const dots = intensityDots(p.intensity);
+  const strokes = (p.focus||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const chips = strokes.map(x=>`<span class="fchip">${esc(x)}</span>`).join('');
+  const dateStr = fmtPracDate(p.date);
+  return `<div class="pr" onclick="editPractice('${p.id}')">
+    <div class="av">${av}</div>
+    <div class="main">
+      <div class="top"><div class="t">${title}</div>${dur?`<div class="dur">${dur}</div>`:''}</div>
+      <div class="meta">${dateStr?`<span class="mchip">${esc(dateStr)}</span>`:''}${dots}</div>
+      ${chips?`<div class="focus">${chips}</div>`:''}
+    </div></div>`;
+}
 function renderPractices(){
   const el = document.getElementById('pracList');
-  if(!practices.length){ el.innerHTML = emptyBox('🏋️','No practices yet','Tap + to log a session.'); return; }
-  el.innerHTML = [...practices].sort(byDateDesc).map(p=>{
-    return `<div class="item" onclick="editPractice('${p.id}')">
-      <div class="main"><div class="t">${esc(p.focus||'Practice')}</div>
-        <div class="s">${esc(fmtDate(p.date))}${p.time?' · '+esc(p.time):''}${p.duration?' · '+esc(p.duration)+' min':''}${p.with?' · '+esc(p.with):''}</div></div>
-      <span class="pill neutral">${'●'.repeat(Math.max(0,Math.min(5,+p.intensity||0)))||'—'}</span></div>`;
+  const cEl = document.getElementById('pracCount');
+  if(!practices.length){ if(cEl) cEl.textContent=''; el.innerHTML = emptyBox('🏋️','No practices yet','Tap + to log a session.'); return; }
+  if(cEl) cEl.textContent = practices.length+' '+(practices.length===1?'session':'sessions');
+  const sorted = [...practices].sort(byDateDesc);
+  // weekly cadence chart — last 7 weeks
+  const thisMon = weekStart(new Date());
+  const weeks = [];
+  for(let i=6;i>=0;i--){ const d=new Date(thisMon); d.setDate(d.getDate()-i*7); weeks.push(isoDay(d)); }
+  const wkCount = {};
+  practices.forEach(p=>{ if(!p.date) return; const ws=weekStartISO(p.date); wkCount[ws]=(wkCount[ws]||0)+1; });
+  const counts = weeks.map(w=>wkCount[w]||0);
+  const maxC = Math.max(1, ...counts);
+  const total7 = counts.reduce((a,b)=>a+b,0);
+  const avg = (total7/7).toFixed(1);
+  const thisCount = wkCount[weeks[6]]||0;
+  const chart = `<div class="wcard">
+    <h3>Sessions per week</h3>
+    <div class="wcap"><b>${thisCount}</b> this week · averaging <b>${avg}</b>/week over 7 weeks</div>
+    <div class="wchart">${weeks.map((w,i)=>{
+      const c=counts[i]; const h = c===0?4:Math.max(14, Math.round(c/maxC*74));
+      const now = i===6;
+      const lbl = i===6?'This wk':(i===5?'Last wk':chartLabel(w));
+      return `<div class="col${now?' now':''}"><div class="cn">${c}</div><div class="bar" style="height:${h}px"></div><div class="cl">${esc(lbl)}</div></div>`;
+    }).join('')}</div>
+  </div>`;
+  // group sessions by week
+  const groups = {};
+  sorted.forEach(p=>{ const ws = p.date?weekStartISO(p.date):'nodate'; (groups[ws]=groups[ws]||[]).push(p); });
+  const lastMonD = new Date(thisMon); lastMonD.setDate(lastMonD.getDate()-7);
+  const lastMon = isoDay(lastMonD);
+  const gKeys = Object.keys(groups).sort((a,b)=>{ if(a==='nodate') return 1; if(b==='nodate') return -1; return b.localeCompare(a); });
+  const groupsHTML = gKeys.map(ws=>{
+    const items = groups[ws];
+    const mins = items.reduce((sum,p)=>sum+(+p.duration||0),0);
+    const label = ws==='nodate'?'No date':(ws===weeks[6]?'This week':(ws===lastMon?'Last week':'Week of '+chartLabel(ws)));
+    const hrs = mins>=60?(mins/60).toFixed(1)+'h':(mins?mins+'m':'');
+    const head = `<div class="wk"><div class="wk-t">${label}</div><div class="wk-s">${items.length} session${items.length>1?'s':''}${hrs?' · '+hrs:''}</div></div>`;
+    return head + items.map(practiceCard).join('');
   }).join('');
+  el.innerHTML = chart + groupsHTML;
 }
 
 function emptyBox(icon,title,sub){
