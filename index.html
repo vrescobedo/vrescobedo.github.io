@@ -19,6 +19,23 @@
     --bg:#f4f6f4; --card:#ffffff; --ink:#1b2420; --muted:#6b7a72; --line:#e2e8e3;
     --win:#1f8a52; --loss:#c0453b; --shadow:0 2px 10px rgba(16,50,39,.08);
   }
+  :root[data-theme="dark"]{
+    --green:#3f9e68; --green-dark:#0c241b; --lime:#c9e86b; --lime-dark:#9fce3a;
+    --bg:#0f1512; --card:#19211d; --ink:#e9efeb; --muted:#8ea298; --line:#28322c;
+    --win:#3ab06e; --loss:#e0695f; --shadow:0 2px 12px rgba(0,0,0,.42);
+  }
+  :root[data-theme="dark"] .bar-track{background:#222b26}
+  :root[data-theme="dark"] .drange .clr{background:#222b26}
+  :root[data-theme="dark"] .btn.ghost{background:#222b26}
+  :root[data-theme="dark"] .tag{background:#222b26}
+  :root[data-theme="dark"] .pill.neutral{background:#222b26}
+  :root[data-theme="dark"] .pill.win{background:rgba(58,176,110,.18);color:#6fd39a}
+  :root[data-theme="dark"] .pill.loss{background:rgba(224,105,95,.18);color:#f0897f}
+  :root[data-theme="dark"] .btn.danger{background:rgba(224,105,95,.16)}
+  :root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background:#141b17}
+  :root[data-theme="dark"] .seg label{background:#141b17}
+  :root[data-theme="dark"] .chips label{background:#141b17}
+  :root[data-theme="dark"] .stat.win{background:linear-gradient(160deg,#16281e,#19211d);border-color:#27482f}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
@@ -28,7 +45,7 @@
     position:sticky;top:0;z-index:20;box-shadow:var(--shadow)}
   header .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
   header h1{font-size:19px;margin:0;display:flex;align-items:center;gap:9px;font-weight:700}
-  header h1 .hello{font-weight:600;font-size:13px;opacity:.92;margin-left:2px;padding-left:10px;border-left:1px solid rgba(255,255,255,.4);white-space:nowrap}
+  .greet{margin-top:8px;font-size:14px;font-weight:500;color:rgba(255,255,255,.9)}
   .ball{width:22px;height:22px;border-radius:50%;background:var(--lime);position:relative;flex:0 0 auto}
   .ball::before,.ball::after{content:"";position:absolute;inset:0;border:2px solid var(--green-dark);
     border-radius:50%;clip-path:inset(0 50% 0 0)}
@@ -50,13 +67,14 @@
   .drange .clr{flex:0 0 auto;width:auto;border:0;background:#eef2ee;color:var(--ink);font-weight:700;
     padding:10px 13px;border-radius:9px;cursor:pointer;font-size:13px}
   .dpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-  .dpresets button{flex:1;min-width:calc(50% - 3px);border:1px solid var(--line);background:#fbfdfb;
-    color:var(--muted);font-weight:700;font-size:12.5px;padding:9px 6px;border-radius:9px;cursor:pointer}
+  .dpresets button{flex:1;min-width:calc(50% - 3px);border:1px solid var(--line);background:var(--card);
+    color:var(--muted);font-weight:700;font-size:12.5px;padding:9px 6px;border-radius:20px;cursor:pointer}
   .dpresets button.on{background:var(--green);color:#fff;border-color:transparent}
   .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:16px}
   .stat{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
   .stat .n{font-size:26px;font-weight:800;color:var(--green)}
   .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .stat.win{background:linear-gradient(160deg,#f2f9f3,#ffffff);border:1px solid #e0efe4}
   .stat.win .n{color:var(--win)}
   .stat .delta{font-size:11.5px;font-weight:700;margin-top:5px;display:flex;align-items:center;gap:3px;flex-wrap:wrap}
   .stat .delta.up{color:var(--win)}
@@ -77,6 +95,13 @@
   .item .main{flex:1;min-width:0}
   .item .t{font-weight:700;font-size:15px}
   .item .s{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .item.match{border-left:4px solid var(--line)}
+  .item.match.res-win{border-left-color:var(--win)}
+  .item.match.res-loss{border-left-color:var(--loss)}
+  .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .mscore{font-size:14px;font-weight:600;margin-top:5px}
+  .mtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .tag{font-size:11.5px;font-weight:600;color:var(--muted);background:#eef2ee;border-radius:7px;padding:3px 8px}
   .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .pill.win{background:#e3f4ea;color:var(--win)}
   .pill.loss{background:#fbe6e4;color:var(--loss)}
@@ -93,7 +118,8 @@
     display:flex;z-index:25;padding-bottom:env(safe-area-inset-bottom)}
   nav.tabs button{flex:1;background:none;border:0;padding:9px 4px 7px;color:var(--muted);font-size:11px;
     display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-weight:600}
-  nav.tabs button .ic{font-size:20px}
+  nav.tabs button .ic{font-size:20px;display:flex;align-items:center;justify-content:center;height:22px}
+  nav.tabs button .ic svg{width:22px;height:22px;display:block}
   nav.tabs button.on{color:var(--green)}
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(16,50,39,.45);display:none;z-index:40;align-items:flex-end;justify-content:center}
@@ -191,6 +217,7 @@
     .sp-contact{margin-top:12px}.sp-skip{margin-top:12px}
   }
 </style>
+<script>(function(){try{var p=localStorage.getItem('tennis_theme')||'system';var d=p==='dark'||(p==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();</script>
 </head>
 <body>
 <!-- =============== INTRO / ABOUT (10s on launch; content by device timezone) =============== -->
@@ -209,11 +236,12 @@
 
 <header>
   <div class="row">
-    <h1><span class="ball"></span> MyTennisApp<span id="helloName" class="hello"></span></h1>
+    <h1><span class="ball"></span> MyTennisApp</h1>
     <div class="hbtns">
       <button class="hbtn" onclick="openMenu()">Data ▾</button>
     </div>
   </div>
+  <div class="greet" id="helloName"></div>
 </header>
 
 <main>
@@ -263,11 +291,11 @@
 <button class="fab" id="fab" onclick="addCurrent()">+</button>
 
 <nav class="tabs">
-  <button data-v="dash" class="on" onclick="show('dash')"><span class="ic">📊</span>Dashboard</button>
-  <button data-v="matches" onclick="show('matches')"><span class="ic">🎾</span>Matches</button>
-  <button data-v="opponents" onclick="show('opponents')"><span class="ic">👤</span>Opponents</button>
-  <button data-v="practices" onclick="show('practices')"><span class="ic">🏋️</span>Practices</button>
-  <button onclick="openAbout()"><span class="ic">ℹ️</span>About</button>
+  <button data-v="dash" class="on" onclick="show('dash')"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M4 20h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span>Dashboard</button>
+  <button data-v="matches" onclick="show('matches')"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="1.7"/><path d="M5.2 6.9c2.7 1.9 2.7 8.3 0 10.2M18.8 6.9c-2.7 1.9-2.7 8.3 0 10.2" stroke="currentColor" stroke-width="1.7"/></svg></span>Matches</button>
+  <button data-v="opponents" onclick="show('opponents')"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Opponents</button>
+  <button data-v="practices" onclick="show('practices')"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h3l2.5-6 4 13 2.5-7H21" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Practices</button>
+  <button onclick="openAbout()"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>About</button>
 </nav>
 
 <!-- MODAL -->
@@ -322,8 +350,26 @@ function greetWord(){
 }
 function renderHello(){
   const el = document.getElementById('helloName');
-  if(el) el.textContent = (profile && profile.firstName) ? (greetWord() + ' ' + profile.firstName + '!') : '';
+  if(!el) return;
+  if(profile && profile.firstName){ el.textContent = greetWord() + ', ' + profile.firstName + '!'; el.style.display=''; }
+  else { el.textContent=''; el.style.display='none'; }
 }
+/* ---------------- appearance (light / dark) ---------------- */
+function applyTheme(){
+  let pref='system'; try{ pref=localStorage.getItem('tennis_theme')||'system'; }catch(e){}
+  const dark = pref==='dark' || (pref==='system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+}
+function themeLabel(){ let p='system'; try{ p=localStorage.getItem('tennis_theme')||'system'; }catch(e){} return p==='system'?'System':(p==='dark'?'Dark':'Light'); }
+function cycleTheme(){
+  const order=['system','light','dark'];
+  let p='system'; try{ p=localStorage.getItem('tennis_theme')||'system'; }catch(e){}
+  p = order[(order.indexOf(p)+1)%order.length];
+  try{ localStorage.setItem('tennis_theme', p); }catch(e){}
+  applyTheme();
+  const b=document.getElementById('themeToggleBtn'); if(b) b.textContent='🌗 Appearance: '+themeLabel();
+}
+if(window.matchMedia){ try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ let p='system'; try{ p=localStorage.getItem('tennis_theme')||'system'; }catch(e){} if(p==='system') applyTheme(); }); }catch(e){} }
 function profileFormHTML(p, isSetup){
   p = p || {};
   return `
@@ -555,10 +601,14 @@ function renderMatches(){
   el.innerHTML = [...matches].sort(byDateDesc).map(m=>{
     const cls = m.result==='Win'?'win':(m.result==='Loss'?'loss':'neutral');
     const fmtLabel = m.format==='Doubles' ? ('Doubles'+(m.partner?' w/ '+esc(m.partner):'')) : 'Singles';
-    return `<div class="item" onclick="editMatch('${m.id}')">
-      <div class="main"><div class="t">vs ${esc(m.opponent||'—')}</div>
-        <div class="s">${esc(fmtDate(m.date))}${m.time?' · '+esc(m.time):''} · ${fmtLabel} · ${esc(m.surface||'')}${m.score?' · '+esc(m.score):''}</div></div>
-      <span class="pill ${cls}">${esc(m.result||'—')}</span></div>`;
+    const tags = [esc(fmtDate(m.date))+(m.time?' · '+esc(m.time):''), fmtLabel, esc(m.surface||'')]
+      .filter(t=>t && t.trim()).map(t=>`<span class="tag">${t}</span>`).join('');
+    return `<div class="item match res-${cls}" onclick="editMatch('${m.id}')">
+      <div class="main">
+        <div class="mrow"><div class="t">vs ${esc(m.opponent||'—')}</div><span class="pill ${cls}">${esc(m.result||'—')}</span></div>
+        ${m.score?`<div class="mscore">${esc(m.score)}</div>`:''}
+        <div class="mtags">${tags}</div>
+      </div></div>`;
   }).join('');
 }
 
@@ -755,6 +805,7 @@ function openMenu(){
     <div class="menu-sheet">
       <h3>Data</h3>
       <button onclick="editProfile()">🎾 Player profile</button>
+      <button onclick="cycleTheme()" id="themeToggleBtn">🌗 Appearance: ${themeLabel()}</button>
       <button onclick="exportJSON()">💾 Backup all data (.json)</button>
       <button onclick="exportCSV('matches')">📄 Export Matches (.csv)</button>
       <button onclick="exportCSV('opponents')">📄 Export Opponents (.csv)</button>
@@ -933,6 +984,7 @@ function hideCelebration(){
 document.getElementById('celebrate').addEventListener('click', hideCelebration);
 
 /* init */
+applyTheme();
 restoreDashRange();
 show('dash');
 renderHello();
