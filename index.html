@@ -36,6 +36,16 @@
   :root[data-theme="dark"] .seg label{background:#141b17}
   :root[data-theme="dark"] .chips label{background:#141b17}
   :root[data-theme="dark"] .stat.win{background:linear-gradient(160deg,#16281e,#19211d);border-color:#27482f}
+  :root[data-theme="dark"] .av{background:#20302a}
+  :root[data-theme="dark"] .badge.r{background:#222b26}
+  :root[data-theme="dark"] .badge.l{background:rgba(224,169,66,.16);color:#e0a942}
+  :root[data-theme="dark"] .chip{background:#222b26}
+  :root[data-theme="dark"] .rec.win{background:rgba(58,176,110,.18);color:#6fd39a}
+  :root[data-theme="dark"] .rec.loss{background:rgba(224,105,95,.18);color:#f0897f}
+  :root[data-theme="dark"] .rec.even{background:#222b26}
+  :root[data-theme="dark"] .rm .p.win{background:rgba(58,176,110,.18);color:#6fd39a}
+  :root[data-theme="dark"] .rm .p.loss{background:rgba(224,105,95,.18);color:#f0897f}
+  :root[data-theme="dark"] .hstat .n{color:#5cc985}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
@@ -102,6 +112,50 @@
   .mscore{font-size:14px;font-weight:600;margin-top:5px}
   .mtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
   .tag{font-size:11.5px;font-weight:600;color:var(--muted);background:#eef2ee;border-radius:7px;padding:3px 8px}
+  /* opponents tab */
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 10px}
+  .sechead .sec{margin:0}
+  .count{font-size:12.5px;color:var(--muted);font-weight:600}
+  .oppsearch{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .oppsearch input{border:0;background:none;flex:1;font-size:14px;color:var(--ink);padding:0}
+  .oppsearch input:focus{outline:none}
+  .sorts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .sorts button{border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:700;font-size:12px;padding:7px 12px;border-radius:20px;cursor:pointer}
+  .sorts button.on{background:var(--green);color:#fff;border-color:transparent}
+  .op{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:11px;cursor:pointer}
+  .op:active{transform:scale(.995)}
+  .op .main{flex:1;min-width:0}
+  .op .t{font-weight:700;font-size:15.5px}
+  .av{width:42px;height:42px;border-radius:50%;background:#eaf3ec;color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:0 0 auto}
+  .av.lg{width:56px;height:56px;font-size:20px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+  .badge{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px}
+  .badge.r{background:#eef2ee;color:var(--muted)}
+  .badge.l{background:#fdf1dd;color:#b7791f}
+  .chip{font-size:11.5px;font-weight:600;color:var(--muted);background:#eef2ee;border-radius:7px;padding:2px 8px}
+  .op .note{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rec{font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:20px;white-space:nowrap;flex:0 0 auto}
+  .rec.win{background:#e3f4ea;color:var(--win)}
+  .rec.loss{background:#fbe6e4;color:var(--loss)}
+  .rec.even{background:#eef2ee;color:var(--muted)}
+  .pf-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .pf-name{font-size:19px;font-weight:800}
+  .hstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  .hstat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 10px;text-align:center}
+  .hstat .n{font-size:22px;font-weight:800;color:var(--green)}
+  .hstat.win .n{color:var(--win)}
+  .hstat .l{font-size:11px;color:var(--muted);margin-top:3px}
+  .hlbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:2px 2px 9px}
+  .rm{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:9px;border-left:4px solid var(--line)}
+  .rm.win{border-left-color:var(--win)}
+  .rm.loss{border-left-color:var(--loss)}
+  .rm .d{font-size:12px;color:var(--muted);font-weight:600;width:52px;flex:0 0 auto}
+  .rm .sc{flex:1;font-size:13.5px;font-weight:600}
+  .rm .su{font-size:11px;color:var(--muted);font-weight:600}
+  .rm .p{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px}
+  .rm .p.win{background:#e3f4ea;color:var(--win)}
+  .rm .p.loss{background:#fbe6e4;color:var(--loss)}
+  .notecard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:13.5px;line-height:1.5}
   .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .pill.win{background:#e3f4ea;color:var(--win)}
   .pill.loss{background:#fbe6e4;color:var(--loss)}
@@ -277,7 +331,19 @@
 
   <!-- OPPONENTS -->
   <section id="v-opponents" class="view">
-    <h2 class="sec">Opponents</h2>
+    <div class="sechead"><h2 class="sec">Opponents</h2><span class="count" id="oppCount"></span></div>
+    <div id="oppControls">
+      <div class="oppsearch">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none"><circle cx="11" cy="11" r="7" stroke="var(--muted)" stroke-width="1.8"/><path d="M20 20l-3.2-3.2" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="oppSearchInput" type="text" placeholder="Search opponents" oninput="setOppSearch(this.value)">
+      </div>
+      <div class="sorts" id="oppSorts">
+        <button data-s="name" class="on" onclick="setOppSort('name')">Name</button>
+        <button data-s="played" onclick="setOppSort('played')">Most played</button>
+        <button data-s="record" onclick="setOppSort('record')">Best record</button>
+        <button data-s="recent" onclick="setOppSort('recent')">Recent</button>
+      </div>
+    </div>
     <div id="oppList"></div>
   </section>
 
@@ -612,18 +678,96 @@ function renderMatches(){
   }).join('');
 }
 
+let oppSearch='', oppSort='name';
+function oppInitials(name){ const parts=(name||'').trim().split(/\s+/).filter(Boolean); if(!parts.length) return '?'; const a=parts[0][0]||''; const b=parts.length>1?parts[parts.length-1][0]:''; return (a+b).toUpperCase(); }
+function fmtDayMon(d){ if(!d) return ''; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?d:dt.toLocaleDateString(undefined,{day:'numeric',month:'short'}); }
+function handBadge(h){ return h==='Right'?'<span class="badge r">R</span>':(h==='Left'?'<span class="badge l">L</span>':''); }
+function setOppSearch(v){ oppSearch=v; renderOpponents(); }
+function setOppSort(sortKey){ oppSort=sortKey; document.querySelectorAll('#oppSorts button').forEach(b=>b.classList.toggle('on', b.dataset.s===sortKey)); renderOpponents(); }
 function renderOpponents(){
   const el = document.getElementById('oppList');
-  if(!opponents.length){ el.innerHTML = emptyBox('👤','No opponents yet','Tap + to add someone you play.'); return; }
-  el.innerHTML = [...opponents].sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(o=>{
+  const controls = document.getElementById('oppControls');
+  const cEl = document.getElementById('oppCount');
+  if(!opponents.length){
+    if(controls) controls.style.display='none';
+    if(cEl) cEl.textContent='';
+    el.innerHTML = emptyBox('👤','No opponents yet','Tap + to add someone you play.');
+    return;
+  }
+  if(controls) controls.style.display='';
+  if(cEl) cEl.textContent = opponents.length+' '+(opponents.length===1?'person':'people');
+  const q = oppSearch.trim().toLowerCase();
+  let list = opponents.map(o=>{
     const rel = matches.filter(m=>m.opponent===o.name);
     const w = rel.filter(m=>m.result==='Win').length, l = rel.filter(m=>m.result==='Loss').length;
-    const rec = rel.length? `${w}–${l}` : 'no matches';
-    return `<div class="item" onclick="editOpponent('${o.id}')">
-      <div class="main"><div class="t">${esc(o.name||'—')}</div>
-        <div class="s">${esc([o.club,o.level,o.city].filter(Boolean).join(' · ')||'—')}</div></div>
-      <span class="pill neutral">${esc(rec)}</span></div>`;
+    const last = rel.reduce((mx,m)=> (m.date && m.date>mx)?m.date:mx, '');
+    const winPct = (w+l)? w/(w+l) : -1;
+    return {o,w,l,total:rel.length,last,winPct};
+  });
+  if(q) list = list.filter(x=> (x.o.name||'').toLowerCase().includes(q) || (x.o.club||'').toLowerCase().includes(q) || (x.o.city||'').toLowerCase().includes(q));
+  list.sort((a,b)=>{
+    if(oppSort==='played') return b.total-a.total || (a.o.name||'').localeCompare(b.o.name||'');
+    if(oppSort==='record') return b.winPct-a.winPct || b.total-a.total || (a.o.name||'').localeCompare(b.o.name||'');
+    if(oppSort==='recent') return (b.last||'').localeCompare(a.last||'') || (a.o.name||'').localeCompare(b.o.name||'');
+    return (a.o.name||'').localeCompare(b.o.name||'');
+  });
+  if(!list.length){ el.innerHTML = '<div class="hint" style="text-align:center;padding:26px">No opponents match “'+esc(oppSearch)+'”.</div>'; return; }
+  el.innerHTML = list.map(x=>{
+    const o = x.o;
+    const recCls = x.total ? (x.w>x.l?'win':(x.l>x.w?'loss':'even')) : 'even';
+    const rec = x.total ? (x.w+'–'+x.l) : '—';
+    const chips = [];
+    if(o.level) chips.push('<span class="chip">'+esc(o.level)+'</span>');
+    if(x.total) chips.push('<span class="chip">'+x.total+' match'+(x.total>1?'es':'')+'</span>');
+    if(x.last) chips.push('<span class="chip">Last '+esc(fmtDayMon(x.last))+'</span>');
+    const note = (o.notes||'').split('\n')[0].trim();
+    return `<div class="op" onclick="openOppProfile('${o.id}')">
+      <div class="av">${esc(oppInitials(o.name))}</div>
+      <div class="main">
+        <div class="t">${esc(o.name||'—')}</div>
+        <div class="meta">${handBadge(o.hand)}${chips.join('')}</div>
+        ${note?`<div class="note">${esc(note)}</div>`:''}
+      </div>
+      <span class="rec ${recCls}">${esc(rec)}</span>
+    </div>`;
   }).join('');
+}
+function openOppProfile(id){
+  const o = opponents.find(x=>x.id===id);
+  if(!o){ editOpponent(id); return; }
+  const rel = [...matches.filter(m=>m.opponent===o.name)].sort(byDateDesc);
+  const mx = metricsFor(rel, []);
+  const w=mx.wins, l=mx.losses, total=mx.total, rate=Math.round(mx.winPct);
+  const surf={}; rel.forEach(m=>{ const k=m.surface||'—'; surf[k]=surf[k]||{w:0,t:0}; surf[k].t++; if(m.result==='Win')surf[k].w++; });
+  const sKeys = Object.keys(surf).sort((a,b)=>surf[b].t-surf[a].t);
+  const surfHTML = sKeys.length ? sKeys.map(k=>{ const {w,t}=surf[k]; const pct=t?Math.round(w/t*100):0; return `<div class="bar-row"><span class="lbl">${esc(k)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="val">${w}–${t-w}</span></div>`; }).join('') : '<div class="hint">No matches logged yet.</div>';
+  const recentHTML = rel.length ? rel.slice(0,6).map(m=>{ const c=m.result==='Win'?'win':(m.result==='Loss'?'loss':''); const pill=m.result==='Win'?'<span class="p win">Win</span>':(m.result==='Loss'?'<span class="p loss">Loss</span>':''); return `<div class="rm ${c}"><span class="d">${esc(fmtDayMon(m.date))}</span><span class="sc">${esc(m.score||'—')}${m.surface?` <span class="su">· ${esc(m.surface)}</span>`:''}</span>${pill}</div>`; }).join('') : '<div class="hint">No matches logged yet.</div>';
+  const metaChips = [];
+  if(o.club) metaChips.push('<span class="chip">'+esc(o.club)+'</span>');
+  if(o.level) metaChips.push('<span class="chip">'+esc(o.level)+'</span>');
+  if(o.city) metaChips.push('<span class="chip">'+esc(o.city)+'</span>');
+  const note = (o.notes||'').trim();
+  openModal(`
+    <div class="pf-top">
+      <div class="av lg">${esc(oppInitials(o.name))}</div>
+      <div><div class="pf-name">${esc(o.name||'—')}</div>
+        <div class="meta">${handBadge(o.hand)}${metaChips.join('')}</div></div>
+    </div>
+    <div class="hstats">
+      <div class="hstat ${total&&w>=l?'win':''}"><div class="n">${total?w+'–'+l:'—'}</div><div class="l">Your record</div></div>
+      <div class="hstat"><div class="n">${(w+l)?rate+'%':'—'}</div><div class="l">Win rate</div></div>
+      <div class="hstat"><div class="n">${(mx.setsW+mx.setsL)?mx.setsW+'–'+mx.setsL:'—'}</div><div class="l">Sets</div></div>
+    </div>
+    <div class="hlbl">Results by surface</div>
+    <div class="bar-wrap">${surfHTML}</div>
+    <div class="hlbl">Recent meetings</div>
+    ${recentHTML}
+    <div class="hlbl" style="margin-top:14px">Notes</div>
+    <div class="notecard">${note?esc(note):'<span style="color:var(--muted)">No notes yet.</span>'}</div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Close</button>
+      <button class="btn primary" onclick="editOpponent('${o.id}')">Edit</button>
+    </div>`);
 }
 
 function renderPractices(){
