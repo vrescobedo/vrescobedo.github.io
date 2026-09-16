@@ -599,7 +599,9 @@ function metricsFor(mset,pset){
   const setPct=(setsW+setsL)?setsW/(setsW+setsL)*100:0;
   const gamePct=(gamesW+gamesL)?gamesW/(gamesW+gamesL)*100:0;
   const mins=pset.reduce((s,p)=>s+(+p.duration||0),0);
-  return {total,wins,losses,setsW,setsL,gamesW,gamesL,winPct,setPct,gamePct,sessions:pset.length,mins};
+  const matchMins=mset.reduce((s,m)=>s+(+m.duration||0),0);
+  const totalMins=mins+matchMins;
+  return {total,wins,losses,setsW,setsL,gamesW,gamesL,winPct,setPct,gamePct,sessions:pset.length,mins,matchMins,totalMins};
 }
 function pctDelta(cur,prev){
   if(prev==null) return null;
@@ -639,6 +641,7 @@ function renderDash(){
   }
   const dl=(c,p)=> prev ? pctDelta(c,p) : null;
   const stats = [
+    {n:(cur.totalMins>=60?(cur.totalMins/60).toFixed(1)+'h':cur.totalMins+'m'),l:'Total Time Played', d:dl(cur.totalMins, prev&&prev.totalMins)},
     {n:total,l:'Matches played', d:dl(cur.total, prev&&prev.total)},
     {n:rate+'%',l:'Win rate',cls:'win', d:dl(cur.winPct, prev&&prev.winPct)},
     {n:wins+'–'+losses,l:'Win – Loss', d:dl(cur.winPct, prev&&prev.winPct)},
