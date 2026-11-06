@@ -1,5 +1,5 @@
 /* MyTennisApp service worker — enables offline use and installability */
-const CACHE = 'mytennis-v15';
+const CACHE = 'mytennis-v16';
 const ASSETS = [
   './',
   './index.html',
